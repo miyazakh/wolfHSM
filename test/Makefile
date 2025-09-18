@@ -94,6 +94,11 @@ endif
 ## wolfHSM defines
 ifeq ($(NOCRYPTO),1)
 	DEF += -DWOLFHSM_CFG_NO_CRYPTO
+ifeq ($(SCAN),1)
+	SCAN_LOG = scan_test.log
+	# Default target
+	.DEFAULT_GOAL := scan
+endif
 endif
 
 # Support a DMA-capable build
@@ -202,6 +207,13 @@ build_hex: $(BUILD_DIR) $(BUILD_DIR)/$(BIN).hex
 build_static: $(BUILD_DIR) $(BUILD_DIR)/$(BIN).a
 	@echo ""
 	$(CMD_ECHO) $(SIZE) $(BUILD_DIR)/$(BIN).a
+
+analyze: $(OBJS_ASM) $(OBJS_C)
+
+scan:
+	@echo "Running scan-build static analysis"
+	@mkdir -p $(WOLFHSM_DIR)/scan_out/
+	@scan-build --status-bugs $(MAKE) analyze 2> $(WOLFHSM_DIR)/scan_out/$(SCAN_LOG)
 
 $(BUILD_DIR):
 	$(CMD_ECHO) mkdir -p $(BUILD_DIR)
