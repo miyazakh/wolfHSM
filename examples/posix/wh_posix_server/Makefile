@@ -92,8 +92,8 @@ ifeq ($(SCAN),1)
 SCAN_LOG = scan_server_tcp.log
 # Default target
 .DEFAULT_GOAL := scan
-
 endif
+
 # wolfHSM source files
 SRC_C += $(wildcard $(WOLFHSM_DIR)/src/*.c)
 

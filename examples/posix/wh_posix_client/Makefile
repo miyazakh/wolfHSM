@@ -191,4 +191,3 @@ clean:
 			$(BUILD_DIR)/*.a \
 			$(BUILD_DIR)/*.sym \
 			$(BUILD_DIR)/*.disasm
-

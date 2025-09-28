@@ -96,13 +96,13 @@ analyze: $(SRC)
 	for f in $(SRC); do \
 		base=$(basename $$f .c); \
 		obj=$$base.o; \
+		echo "Analyzing $$f..."; \
 		$(CC) $(CFLAGS) -c $$f -o $$obj;\
 	done
 
 scan:
 	@echo "Running scan-build static analysis"
 	@mkdir -p $(WOLFHSM_DIR)/scan_out/
-	#@scan-build --status-bugs $(MAKE) analyze 2>&1 1>/dev/null | tee $(WOLFHSM_DIR)/scan_out/$(SCAN_LOG) >&2
 	@scan-build --status-bugs $(MAKE) analyze 2> $(WOLFHSM_DIR)/scan_out/$(SCAN_LOG)
 
 clean: clean-test
