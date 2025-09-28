@@ -6,7 +6,7 @@
 #include <stdio.h>  /* For printf */
 #include <string.h> /* For memset, memcpy */
 #include <unistd.h> /* for read */
-#include <time.h> /* For nanosleep */
+#include <time.h>   /* For nanosleep */
 
 #include "wolfhsm/wh_error.h"
 #include "wolfhsm/wh_comm.h"
@@ -20,7 +20,7 @@
 
 /** Local declarations */
 static void _sleepMs(long milliseconds);
-static int wh_ClientTask(void* cf);
+static int  wh_ClientTask(void* cf);
 
 
 static void _sleepMs(long milliseconds)
@@ -32,10 +32,10 @@ static void _sleepMs(long milliseconds)
 }
 
 enum {
-	REPEAT_COUNT = 10,
-	REQ_SIZE = 32,
-	RESP_SIZE = 64,
-	ONE_MS = 1,
+    REPEAT_COUNT = 10,
+    REQ_SIZE     = 32,
+    RESP_SIZE    = 64,
+    ONE_MS       = 1,
 };
 
 #define WH_SERVER_TCP_IPSTRING "127.0.0.1"
@@ -45,15 +45,15 @@ enum {
 static int wh_ClientTask(void* cf)
 {
     whClientConfig* config = (whClientConfig*)cf;
-    int ret = 0;
+    int             ret    = 0;
     whClientContext client[1];
-    int counter = 1;
+    int             counter = 1;
 
     uint8_t  tx_req[REQ_SIZE] = {0};
-    uint16_t tx_req_len = 0;
+    uint16_t tx_req_len       = 0;
 
     uint8_t  rx_resp[RESP_SIZE] = {0};
-    uint16_t rx_resp_len = 0;
+    uint16_t rx_resp_len        = 0;
 
     if (config == NULL) {
         return -1;
@@ -67,17 +67,16 @@ static int wh_ClientTask(void* cf)
         perror("Init error:");
         return -1;
     }
-    for(counter = 0; counter < REPEAT_COUNT; counter++)
-    {
-        sprintf((char*)tx_req,"Request:%u",counter);
+    for (counter = 0; counter < REPEAT_COUNT; counter++) {
+        sprintf((char*)tx_req, "Request:%u", counter);
         tx_req_len = strlen((char*)tx_req);
         do {
-            ret = wh_Client_EchoRequest(client,
-                    tx_req_len, tx_req);
+            ret = wh_Client_EchoRequest(client, tx_req_len, tx_req);
             if (ret != WH_ERROR_NOTREADY) {
                 if (ret == 0) {
                     printf("Client sent request successfully\n");
-                } else {
+                }
+                else {
                     printf("wh_CLient_EchoRequest failed with ret=%d\n", ret);
                 }
             }
@@ -93,8 +92,7 @@ static int wh_ClientTask(void* cf)
         memset(rx_resp, 0, sizeof(rx_resp));
 
         do {
-            ret = wh_Client_EchoResponse(client,
-                    &rx_resp_len, rx_resp);
+            ret = wh_Client_EchoResponse(client, &rx_resp_len, rx_resp);
             _sleepMs(ONE_MS);
         } while (ret == WH_ERROR_NOTREADY);
 
@@ -105,7 +103,7 @@ static int wh_ClientTask(void* cf)
     }
 #ifndef WOLFHSM_CFG_NO_CRYPTO
     /* Context 1: Client Local Crypto */
-    WC_RNG rng[1];
+    WC_RNG  rng[1];
     uint8_t buffer[128] = {0};
     wc_InitRng_ex(rng, NULL, INVALID_DEVID);
     wc_RNG_GenerateBlock(rng, buffer, sizeof(buffer));
@@ -135,24 +133,25 @@ static int wh_ClientTask(void* cf)
 
 int main(int argc, char** argv)
 {
-    (void)argc; (void)argv;
+    (void)argc;
+    (void)argv;
 
     /* Client configuration/contexts */
-    whTransportClientCb pttccb[1] = {PTT_CLIENT_CB};
-    posixTransportTcpClientContext tcc[1] = {};
-    posixTransportTcpConfig mytcpconfig[1] = {{
-            .server_ip_string = WH_SERVER_TCP_IPSTRING,
-            .server_port = WH_SERVER_TCP_PORT,
+    whTransportClientCb            pttccb[1]      = {PTT_CLIENT_CB};
+    posixTransportTcpClientContext tcc[1]         = {};
+    posixTransportTcpConfig        mytcpconfig[1] = {{
+               .server_ip_string = WH_SERVER_TCP_IPSTRING,
+               .server_port      = WH_SERVER_TCP_PORT,
     }};
 
     whCommClientConfig cc_conf[1] = {{
-            .transport_cb = pttccb,
-            .transport_context = (void*)tcc,
-            .transport_config = (void*)mytcpconfig,
-            .client_id = WH_CLIENT_ID,
+        .transport_cb      = pttccb,
+        .transport_context = (void*)tcc,
+        .transport_config  = (void*)mytcpconfig,
+        .client_id         = WH_CLIENT_ID,
     }};
-    whClientConfig c_conf[1] = {{
-            .comm = cc_conf,
+    whClientConfig     c_conf[1]  = {{
+             .comm = cc_conf,
     }};
 
     return wh_ClientTask(c_conf);
