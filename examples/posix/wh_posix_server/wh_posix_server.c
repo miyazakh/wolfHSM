@@ -406,6 +406,11 @@ int main(int argc, char** argv)
         printf("Failed to wolfCrypt_Cleanup: %d\n", rc);
         return rc;
     }
+#else
+    (void)keyFilePath;
+    (void)keyId;
+    (void)clientId;
+    (void)wh_ServerTask;
 #endif
     return rc;
 }
