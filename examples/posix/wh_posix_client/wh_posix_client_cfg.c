@@ -188,6 +188,7 @@ static unsigned int psk_tls12_client_cb(WOLFSSL* ssl, const char* hint,
     printf("PSK server identity hint: %s\n", hint);
     printf("PSK using identity: %s\n", exampleIdentity);
     strncpy(identity, exampleIdentity, id_max_len);
+    identity[id_max_len-1] = '\0';
 
     printf("Enter PSK password: ");
     if (fgets((char*)key, key_max_len - 1, stdin) == NULL) {

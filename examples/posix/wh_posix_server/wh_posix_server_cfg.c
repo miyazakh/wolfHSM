@@ -478,7 +478,7 @@ static void parseNvmInitFile(const char* filePath)
             fclose(file);
             exit(EXIT_FAILURE);
         }
-        snprintf(label, sizeof(label), "%s", token);
+        (void)snprintf(label, sizeof(label), "%s", token);
 
         /* Parse the file path */
         token = strtok(NULL, " ");
@@ -508,9 +508,9 @@ static void processEntry(Entry* entry, int isKey, whNvmContext* nvmContext)
     }
 
     /* Get the file size */
-    fseek(file, 0, SEEK_END);
+    (void)fseek(file, 0, SEEK_END);
     long fileSize = ftell(file);
-    fseek(file, 0, SEEK_SET);
+    (void)fseek(file, 0, SEEK_SET);
 
     /* Allocate memory for the file data */
     uint8_t* buffer = (uint8_t*)malloc(fileSize);
@@ -553,7 +553,7 @@ static void processEntry(Entry* entry, int isKey, whNvmContext* nvmContext)
     meta.access = entry->access;
     meta.flags  = entry->flags;
     meta.len    = fileSize;
-    snprintf((char*)meta.label, WH_NVM_LABEL_LEN, "%s", entry->label);
+    (void)snprintf((char*)meta.label, WH_NVM_LABEL_LEN, "%s", entry->label);
 
     int rc = wh_Nvm_AddObject(nvmContext, &meta, fileSize, buffer);
     if (rc != 0) {

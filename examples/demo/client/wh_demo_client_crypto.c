@@ -67,7 +67,8 @@ int wh_DemoClient_CryptoRsa(whClientContext* clientContext)
     WC_RNG     rng[1];
 
     /* set the plainText to the test string */
-    strcpy((char*)plainText, plainString);
+    strncpy((char*)plainText, plainString, sizeof(plainText)-1);
+    plainText[sizeof(plainText)-1] = '\0';
 
     /* initialize rng to make the rsa key */
     ret = wc_InitRng_ex(rng, NULL, WH_DEV_ID);
@@ -144,7 +145,8 @@ int wh_DemoClient_CryptoRsaImport(whClientContext* clientContext)
     WC_RNG     rng[1];
 
     /* set the plainText to the test string */
-    strcpy((char*)plainText, plainString);
+    strncpy((char*)plainText, plainString, sizeof(plainText)-1);
+    plainText[sizeof(plainText)-1] = '\0';
 
     /* initialize rng to encrypt with the rsa key */
     ret = wc_InitRng_ex(rng, NULL, WH_DEV_ID);
@@ -497,7 +499,8 @@ int wh_DemoClient_CryptoEcc(whClientContext* clientContext)
     byte       signature[128];
 
     /* Set the message to the test string */
-    strcpy((char*)message, plainMessage);
+    strncpy((char*)message, plainMessage, sizeof(message)-1);
+    message[sizeof(message)-1] = '\0';
 
     /* Initialize the rng to make the ecc keys */
     ret = wc_InitRng_ex(rng, NULL, WH_DEV_ID);
@@ -627,7 +630,8 @@ int wh_DemoClient_CryptoEccImport(whClientContext* clientContext)
     uint8_t    keyBuf[256];
 
     /* Set the message to the test string */
-    strcpy((char*)message, plainMessage);
+    strncpy((char*)message, plainMessage, sizeof(message)-1);
+    message[sizeof(message)-1] = '\0';
 
     /* Initialize the rng for signature signing */
     ret = wc_InitRng_ex(rng, NULL, WH_DEV_ID);
