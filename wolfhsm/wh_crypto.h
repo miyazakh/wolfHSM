@@ -109,6 +109,7 @@ int wh_Crypto_Ed25519DeserializeKeyDer(const uint8_t* buffer, uint16_t size,
 #endif /* HAVE_ED25519 */
 
 #ifdef HAVE_DILITHIUM
+#define WH_CRYPTO_MLDSA_MAX_CTX_LEN (255U)
 /* Store a MlDsaKey to a byte sequence */
 int wh_Crypto_MlDsaSerializeKeyDer(MlDsaKey* key, uint16_t max_size,
                                    uint8_t* buffer, uint16_t* out_size);
