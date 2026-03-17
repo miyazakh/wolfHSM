@@ -83,7 +83,7 @@ uint32_t wh_Utils_ntohl(uint32_t networklong) {
 
 int wh_Utils_memeqzero(uint8_t* buffer, uint32_t size)
 {
-    while (size > 1) {
+    while (size > 0) {
         size--;
         if (buffer[size] != 0)
             return 0;
