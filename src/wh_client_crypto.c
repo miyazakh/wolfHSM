@@ -4433,7 +4433,7 @@ int wh_Client_Sha256(whClientContext* ctx, wc_Sha256* sha256, const uint8_t* in,
 
     /* Caller invoked SHA finalize:
      * wc_CryptoCb_Sha256Hash(sha256, NULL, 0, * hash) */
-    if (out != NULL) {
+    if (ret == 0 && out != NULL) {
         ret = _xferSha256BlockAndUpdateDigest(ctx, sha256, 1);
 
         /* Copy out the final hash value */
@@ -4723,7 +4723,7 @@ int wh_Client_Sha224(whClientContext* ctx, wc_Sha224* sha224, const uint8_t* in,
 
     /* Caller invoked SHA finalize:
      * wc_CryptoCb_Sha224Hash(sha224, NULL, 0, * hash) */
-    if (out != NULL) {
+    if (ret == 0 && out != NULL) {
         ret = _xferSha224BlockAndUpdateDigest(ctx, sha224, 1);
 
         /* Copy out the final hash value */
@@ -5004,7 +5004,7 @@ int wh_Client_Sha384(whClientContext* ctx, wc_Sha384* sha384, const uint8_t* in,
 
     /* Caller invoked SHA finalize:
      * wc_CryptoCb_Sha384Hash(sha384, NULL, 0, * hash) */
-    if (out != NULL) {
+    if (ret == 0 && out != NULL) {
         ret = _xferSha384BlockAndUpdateDigest(ctx, sha384, 1);
 
         /* Copy out the final hash value */
@@ -5284,7 +5284,7 @@ int wh_Client_Sha512(whClientContext* ctx, wc_Sha512* sha512, const uint8_t* in,
 
     /* Caller invoked SHA finalize:
      * wc_CryptoCb_Sha512Hash(sha512, NULL, 0, * hash) */
-    if (out != NULL) {
+    if (ret == 0 && out != NULL) {
         ret = _xferSha512BlockAndUpdateDigest(ctx, sha512, 1);
 
         /* Copy out the final hash value */
