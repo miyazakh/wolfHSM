@@ -3743,7 +3743,7 @@ static int _HandleSha224(whServerContext* ctx, uint16_t magic, int devId,
     wc_Sha224                     sha224[1];
     (void)ctx;
     whMessageCrypto_Sha256Request req;
-    whMessageCrypto_Sha2Response  res;
+    whMessageCrypto_Sha2Response  res = {0};
 
     /* Validate minimum size */
     if (inSize < sizeof(whMessageCrypto_Sha256Request)) {
@@ -3818,7 +3818,7 @@ static int _HandleSha384(whServerContext* ctx, uint16_t magic, int devId,
     wc_Sha384                     sha384[1];
     (void)ctx;
     whMessageCrypto_Sha512Request req;
-    whMessageCrypto_Sha2Response  res;
+    whMessageCrypto_Sha2Response  res = {0};
 
     /* Validate minimum size */
     if (inSize < sizeof(whMessageCrypto_Sha512Request)) {
@@ -3896,7 +3896,7 @@ static int _HandleSha512(whServerContext* ctx, uint16_t magic, int devId,
     wc_Sha512                     sha512[1];
     (void)ctx;
     whMessageCrypto_Sha512Request req;
-    whMessageCrypto_Sha2Response  res;
+    whMessageCrypto_Sha2Response  res = {0};
     int                           hashType = WC_HASH_TYPE_SHA512;
 
     /* Validate minimum size */
