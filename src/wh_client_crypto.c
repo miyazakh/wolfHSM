@@ -4417,7 +4417,7 @@ int wh_Client_Sha256(whClientContext* ctx, wc_Sha256* sha256, const uint8_t* in,
         }
 
         /* Process as many full blocks from the input data as we can */
-        while ((inLen - i) >= WC_SHA256_BLOCK_SIZE) {
+        while (ret == 0 && (inLen - i) >= WC_SHA256_BLOCK_SIZE) {
             memcpy(sha256BufferBytes, in + i, WC_SHA256_BLOCK_SIZE);
             ret = _xferSha256BlockAndUpdateDigest(ctx, sha256, 0);
             i += WC_SHA256_BLOCK_SIZE;
@@ -4707,7 +4707,7 @@ int wh_Client_Sha224(whClientContext* ctx, wc_Sha224* sha224, const uint8_t* in,
         }
 
         /* Process as many full blocks from the input data as we can */
-        while ((inLen - i) >= WC_SHA224_BLOCK_SIZE) {
+        while (ret == 0 && (inLen - i) >= WC_SHA224_BLOCK_SIZE) {
             memcpy(sha224BufferBytes, in + i, WC_SHA224_BLOCK_SIZE);
             ret = _xferSha224BlockAndUpdateDigest(ctx, sha224, 0);
             i += WC_SHA224_BLOCK_SIZE;
@@ -4988,7 +4988,7 @@ int wh_Client_Sha384(whClientContext* ctx, wc_Sha384* sha384, const uint8_t* in,
         }
 
         /* Process as many full blocks from the input data as we can */
-        while ((inLen - i) >= WC_SHA384_BLOCK_SIZE) {
+        while (ret == 0 && (inLen - i) >= WC_SHA384_BLOCK_SIZE) {
             memcpy(sha384BufferBytes, in + i, WC_SHA384_BLOCK_SIZE);
             ret = _xferSha384BlockAndUpdateDigest(ctx, sha384, 0);
             i += WC_SHA384_BLOCK_SIZE;
@@ -5268,7 +5268,7 @@ int wh_Client_Sha512(whClientContext* ctx, wc_Sha512* sha512, const uint8_t* in,
         }
 
         /* Process as many full blocks from the input data as we can */
-        while ((inLen - i) >= WC_SHA512_BLOCK_SIZE) {
+        while (ret == 0 && (inLen - i) >= WC_SHA512_BLOCK_SIZE) {
             memcpy(sha512BufferBytes, in + i, WC_SHA512_BLOCK_SIZE);
             ret = _xferSha512BlockAndUpdateDigest(ctx, sha512, 0);
             i += WC_SHA512_BLOCK_SIZE;
