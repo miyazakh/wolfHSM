@@ -5298,13 +5298,13 @@ int wh_Client_Sha512(whClientContext* ctx, wc_Sha512* sha512, const uint8_t* in,
          */
         switch (hashType) {
             case WC_HASH_TYPE_SHA512_224:
-                ret = wc_InitSha512_224_ex(sha512, NULL, sha512->devId);
+                (void)wc_InitSha512_224_ex(sha512, NULL, sha512->devId);
                 break;
             case WC_HASH_TYPE_SHA512_256:
-                ret = wc_InitSha512_256_ex(sha512, NULL, sha512->devId);
+                (void)wc_InitSha512_256_ex(sha512, NULL, sha512->devId);
                 break;
             default:
-                ret = wc_InitSha512_ex(sha512, NULL, sha512->devId);
+                (void)wc_InitSha512_ex(sha512, NULL, sha512->devId);
                 break;
         }
     }
