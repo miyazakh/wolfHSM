@@ -1037,6 +1037,7 @@ static int _AesGcmKeyUnwrap(whServerContext* server, uint16_t serverKeyId,
 
     ret = wc_AesGcmSetKey(aes, serverKey, serverKeySz);
     if (ret != 0) {
+        wc_AesFree(aes);
         return ret;
     }
 
@@ -1171,6 +1172,7 @@ static int _AesGcmDataUnwrap(whServerContext* server, uint16_t serverKeyId,
 
     ret = wc_AesGcmSetKey(aes, serverKey, serverKeySz);
     if (ret != 0) {
+        wc_AesFree(aes);
         return ret;
     }
 

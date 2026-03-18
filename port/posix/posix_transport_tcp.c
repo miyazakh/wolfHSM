@@ -120,12 +120,12 @@ static int posixTransportTcp_Send(int fd, uint16_t* buffer_offset,
         return WH_ERROR_BADARGS;
     }
 
+    send_size = sizeof(uint32_t) + size;
     if(*buffer_offset == 0) {
         /* Initial write.  Copy data to buffer */
         /* Prepend packet data with the size in network order */
         *packet_len = htonl((uint32_t)size);
         memcpy(packet_data, data, size);
-        send_size = sizeof(uint32_t) + size;
     }
     int remaining_size = send_size - *buffer_offset;
 
