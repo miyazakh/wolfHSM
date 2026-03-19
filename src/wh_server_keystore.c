@@ -1848,7 +1848,7 @@ int wh_Server_HandleKeyRequest(whServerContext* server, uint16_t magic,
 
         case WH_KEY_EXPORT: {
             whMessageKeystore_ExportRequest  req;
-            whMessageKeystore_ExportResponse resp;
+            whMessageKeystore_ExportResponse resp = {0};
             uint32_t                         keySz;
 
             /* translate request */
