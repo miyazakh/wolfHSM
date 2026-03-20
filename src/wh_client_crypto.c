@@ -2704,11 +2704,12 @@ int wh_Client_Ed25519Sign(whClientContext* ctx, ed25519_key* key,
         return WH_ERROR_BADARGS;
     }
 
-    uint16_t req_len = sizeof(whMessageCrypto_GenericRequestHeader) +
-                       sizeof(*req) + msgLen + contextLen;
-    if (req_len > WOLFHSM_CFG_COMM_DATA_LEN) {
+    uint32_t total_len = sizeof(whMessageCrypto_GenericRequestHeader) +
+                         sizeof(*req) + msgLen + contextLen;
+    if (total_len > WOLFHSM_CFG_COMM_DATA_LEN) {
         return WH_ERROR_BADARGS;
     }
+    uint16_t req_len = (uint16_t)total_len;
 
     if (WH_KEYID_ISERASED(key_id)) {
         uint8_t    keyLabel[] = "TempEd25519Sign";
@@ -2820,9 +2821,9 @@ int wh_Client_Ed25519Verify(whClientContext* ctx, ed25519_key* key,
     whMessageCrypto_Ed25519VerifyResponse* res     = NULL;
     uint8_t*                               dataPtr = NULL;
     whKeyId  key_id  = WH_DEVCTX_TO_KEYID(key->devCtx);
-    int      evict   = 0;
-    uint16_t req_len = sizeof(whMessageCrypto_GenericRequestHeader) +
-                       sizeof(*req) + sigLen + msgLen + contextLen;
+    int      evict     = 0;
+    uint32_t total_len = sizeof(whMessageCrypto_GenericRequestHeader) +
+                         sizeof(*req) + sigLen + msgLen + contextLen;
 
     if ((ctx == NULL) || (key == NULL) || (sig == NULL) || (msg == NULL) ||
         (out_res == NULL) || ((context == NULL) && (contextLen > 0))) {
@@ -2840,9 +2841,10 @@ int wh_Client_Ed25519Verify(whClientContext* ctx, ed25519_key* key,
         return WH_ERROR_BADARGS;
     }
 
-    if (req_len > WOLFHSM_CFG_COMM_DATA_LEN) {
+    if (total_len > WOLFHSM_CFG_COMM_DATA_LEN) {
         return WH_ERROR_BADARGS;
     }
+    uint16_t req_len = (uint16_t)total_len;
 
     *out_res = 0;
 
@@ -3712,8 +3714,12 @@ static int _HkdfMakeKey(whClientContext* ctx, int hashType, whKeyId keyIdIn,
         dataPtr, WC_ALGO_TYPE_KDF, WC_KDF_TYPE_HKDF, ctx->cryptoAffinity);
 
     /* Calculate request length including variable-length data */
-    uint16_t req_len = sizeof(whMessageCrypto_GenericRequestHeader) +
-                       sizeof(*req) + inKeySz + saltSz + infoSz;
+    uint32_t total_len = sizeof(whMessageCrypto_GenericRequestHeader) +
+                         sizeof(*req) + inKeySz + saltSz + infoSz;
+    if (total_len > WOLFHSM_CFG_COMM_DATA_LEN) {
+        return WH_ERROR_BADARGS;
+    }
+    uint16_t req_len = (uint16_t)total_len;
 
     /* Use the supplied key id if provided */
     if (inout_key_id != NULL) {
@@ -5710,8 +5716,8 @@ int wh_Client_MlDsaSign(whClientContext* ctx, const byte* in, word32 in_len,
         uint16_t group  = WH_MESSAGE_GROUP_CRYPTO;
         uint16_t action = WC_ALGO_TYPE_PK;
 
-        uint16_t req_len = sizeof(whMessageCrypto_GenericRequestHeader) +
-                           sizeof(*req) + in_len + contextLen;
+        uint32_t total_len = sizeof(whMessageCrypto_GenericRequestHeader) +
+                             sizeof(*req) + in_len + contextLen;
         uint32_t options = 0;
 
         /* Get data pointer from the context to use as request/response storage
@@ -5727,7 +5733,8 @@ int wh_Client_MlDsaSign(whClientContext* ctx, const byte* in, word32 in_len,
                 dataPtr, WC_PK_TYPE_PQC_SIG_SIGN, WC_PQC_SIG_TYPE_DILITHIUM,
                 ctx->cryptoAffinity);
 
-        if (req_len <= WOLFHSM_CFG_COMM_DATA_LEN) {
+        if (total_len <= WOLFHSM_CFG_COMM_DATA_LEN) {
+            uint16_t req_len = (uint16_t)total_len;
             uint8_t* req_data = (uint8_t*)(req + 1);
             if (evict != 0) {
                 options |= WH_MESSAGE_CRYPTO_MLDSA_SIGN_OPTIONS_EVICT;
@@ -5845,8 +5852,8 @@ int wh_Client_MlDsaVerify(whClientContext* ctx, const byte* sig, word32 sig_len,
         uint16_t action  = WC_ALGO_TYPE_PK;
         uint32_t options = 0;
 
-        uint16_t req_len = sizeof(whMessageCrypto_GenericRequestHeader) +
-                           sizeof(*req) + sig_len + msg_len + contextLen;
+        uint32_t total_len = sizeof(whMessageCrypto_GenericRequestHeader) +
+                             sizeof(*req) + sig_len + msg_len + contextLen;
 
 
         /* Get data pointer from the context to use as request/response storage
@@ -5862,7 +5869,8 @@ int wh_Client_MlDsaVerify(whClientContext* ctx, const byte* sig, word32 sig_len,
                                             WC_PQC_SIG_TYPE_DILITHIUM,
                                             ctx->cryptoAffinity);
 
-        if (req_len <= WOLFHSM_CFG_COMM_DATA_LEN) {
+        if (total_len <= WOLFHSM_CFG_COMM_DATA_LEN) {
+            uint16_t req_len = (uint16_t)total_len;
             uint8_t* req_sig  = (uint8_t*)(req + 1);
             uint8_t* req_hash = req_sig + sig_len;
 
