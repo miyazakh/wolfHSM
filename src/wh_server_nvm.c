@@ -67,8 +67,8 @@ static int _HandleNvmRead(whServerContext* server, uint8_t* out_data,
     if (offset >= meta.len)
         return WH_ERROR_BADARGS;
 
-    /* Clamp length to object size */
-    if ((offset + len) > meta.len) {
+    /* Clamp length to object size, use overflow-safe comparison */
+    if (len > meta.len - offset) {
         len = meta.len - offset;
     }
 
@@ -427,8 +427,9 @@ int wh_Server_HandleNvmRequest(whServerContext* server,
 
                 if (rc == 0) {
                     read_len = req.data_len;
-                    /* Clamp length to object size */
-                    if ((req.offset + read_len) > meta.len) {
+                    /* Clamp length to object size, use overflow-safe
+                     * comparison */
+                    if (read_len > meta.len - req.offset) {
                         read_len = meta.len - req.offset;
                     }
                 }

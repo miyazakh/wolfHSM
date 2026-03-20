@@ -500,7 +500,8 @@ static int nfPartition_CheckDataRange(whNvmFlashContext* context,
         return WH_ERROR_BADARGS;
     }
 
-    if (byte_offset + byte_count > maxOffset) {
+    /* Use overflow-safe comparison */
+    if (byte_offset > maxOffset || byte_count > maxOffset - byte_offset) {
         return WH_ERROR_BADARGS;
     }
 
@@ -665,13 +666,14 @@ static int nfObject_ReadDataBytes(whNvmFlashContext* context, int partition,
     start = context->directory.objects[object_index].state.start;
     startOffset = nfPartition_DataOffset(context, partition) + start;
 
-    /* object bounds checks, do both to avoid integer overflow checks */
+    /* object bounds checks, use overflow-safe comparison */
     if (byte_offset >=
         (context->directory.objects[object_index].metadata.len)) {
         return WH_ERROR_BADARGS;
     }
-    if ((byte_offset + byte_count) >
-        (context->directory.objects[object_index].metadata.len)) {
+    if (byte_count >
+        (uint32_t)(context->directory.objects[object_index].metadata.len) -
+            byte_offset) {
         return WH_ERROR_BADARGS;
     }
 

@@ -562,6 +562,29 @@ static int _testOutOfBoundsNvmReads(whClientContext* client,
         wh_Client_NvmReadResponse(client, &server_rc, &len, buffer));
     WH_TEST_ASSERT_RETURN(server_rc == WH_ERROR_BADARGS);
 
+    /* Test with large offset (UINT16_MAX), should fail since offset >=
+     * meta.len. Regression test for integer overflow safety in the
+     * offset+len check */
+    off = UINT16_MAX;
+    len = 1;
+    WH_TEST_RETURN_ON_FAIL(wh_Client_NvmReadRequest(client, id, off, len));
+    WH_TEST_RETURN_ON_FAIL(wh_Server_HandleRequestMessage(server));
+    WH_TEST_RETURN_ON_FAIL(
+        wh_Client_NvmReadResponse(client, &server_rc, &len, buffer));
+    WH_TEST_ASSERT_RETURN(server_rc == WH_ERROR_BADARGS);
+
+    /* Test clamping with offset at midpoint and len exceeding remaining object
+     * size. Verifies the overflow-safe comparison (len > meta.len - offset)
+     * correctly clamps when offset + len would exceed meta.len */
+    off = meta.len / 2;
+    len = meta.len;
+    WH_TEST_RETURN_ON_FAIL(wh_Client_NvmReadRequest(client, id, off, len));
+    WH_TEST_RETURN_ON_FAIL(wh_Server_HandleRequestMessage(server));
+    WH_TEST_RETURN_ON_FAIL(
+        wh_Client_NvmReadResponse(client, &server_rc, &len, buffer));
+    WH_TEST_ASSERT_RETURN(server_rc == WH_ERROR_OK);
+    WH_TEST_ASSERT_RETURN(len == meta.len - meta.len / 2);
+
     return WH_ERROR_OK;
 }
 
