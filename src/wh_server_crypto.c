@@ -557,7 +557,7 @@ int wh_Server_EccKeyCacheImport(whServerContext* ctx, ecc_key* key,
     uint8_t* cacheBuf;
     whNvmMetadata* cacheMeta;
     /* Maximum size of an ecc key der file */
-    uint16_t max_size = ECC_BUFSIZE;;
+    uint16_t max_size = ECC_BUFSIZE;
     uint16_t der_size;
 
     if (    (ctx == NULL) ||
@@ -3497,7 +3497,7 @@ static int _HandleAesGcmDma(whServerContext* ctx, uint16_t magic, int devId,
 #if defined(WOLFSSL_CMAC) && !defined(NO_AES) && defined(WOLFSSL_AES_DIRECT)
 
 /* Resolve CMAC key from request (inline key or keystore ID).
- * outKey must be at least AES_MAX_KEY_SIZE bytes. */
+ * outKey must be at least AES_256_KEY_SIZE bytes. */
 static int _CmacResolveKey(whServerContext* ctx, const uint8_t* requestKey,
                            uint32_t requestKeySz, whKeyId clientKeyId,
                            uint8_t* outKey, uint32_t* outKeyLen)
@@ -3574,7 +3574,7 @@ static int _HandleCmac(whServerContext* ctx, uint16_t magic, int devId,
     if (req.keySz > available) {
         return WH_ERROR_BADARGS;
     }
-    if (req.keySz > AES_MAX_KEY_SIZE) {
+    if (req.keySz > AES_256_KEY_SIZE) {
         return WH_ERROR_BADARGS;
     }
 
@@ -3588,7 +3588,7 @@ static int _HandleCmac(whServerContext* ctx, uint16_t magic, int devId,
 
     memset(&res, 0, sizeof(res));
 
-    uint8_t tmpKey[AES_MAX_KEY_SIZE];
+    uint8_t tmpKey[AES_256_KEY_SIZE];
     uint32_t tmpKeyLen = sizeof(tmpKey);
     Cmac    cmac[1];
 
@@ -5735,7 +5735,7 @@ static int _HandleCmacDma(whServerContext* ctx, uint16_t magic, int devId,
     if (req.keySz > available) {
         return WH_ERROR_BADARGS;
     }
-    if (req.keySz > AES_MAX_KEY_SIZE) {
+    if (req.keySz > AES_256_KEY_SIZE) {
         return WH_ERROR_BADARGS;
     }
 
@@ -5752,7 +5752,7 @@ static int _HandleCmacDma(whServerContext* ctx, uint16_t magic, int devId,
     /* DMA translated address for input */
     void* inAddr = NULL;
 
-    uint8_t tmpKey[AES_MAX_KEY_SIZE];
+    uint8_t tmpKey[AES_256_KEY_SIZE];
     uint32_t tmpKeyLen = sizeof(tmpKey);
     Cmac    cmac[1];
 
