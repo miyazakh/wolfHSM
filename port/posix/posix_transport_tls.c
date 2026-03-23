@@ -482,12 +482,16 @@ int posixTransportTls_RecvRequest(void* context, uint16_t* out_size, void* data)
 
         /* Make accepted socket non-blocking */
         if (fcntl(ctx->accept_fd_p1 - 1, F_SETFL, O_NONBLOCK) != 0) {
+            close(ctx->accept_fd_p1 - 1);
+            ctx->accept_fd_p1 = 0;
             return WH_ERROR_ABORTED;
         }
 
         /* Create SSL object for this connection */
         ctx->ssl = wolfSSL_new(ctx->ssl_ctx);
         if (!ctx->ssl) {
+            close(ctx->accept_fd_p1 - 1);
+            ctx->accept_fd_p1 = 0;
             return WH_ERROR_ABORTED;
         }
 
@@ -496,6 +500,8 @@ int posixTransportTls_RecvRequest(void* context, uint16_t* out_size, void* data)
         if (rc != WOLFSSL_SUCCESS) {
             wolfSSL_free(ctx->ssl);
             ctx->ssl = NULL;
+            close(ctx->accept_fd_p1 - 1);
+            ctx->accept_fd_p1 = 0;
             return WH_ERROR_ABORTED;
         }
 
@@ -509,6 +515,8 @@ int posixTransportTls_RecvRequest(void* context, uint16_t* out_size, void* data)
             }
             wolfSSL_free(ctx->ssl);
             ctx->ssl = NULL;
+            close(ctx->accept_fd_p1 - 1);
+            ctx->accept_fd_p1 = 0;
             return WH_ERROR_ABORTED;
         }
 
