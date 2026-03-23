@@ -398,6 +398,7 @@ int posixTransportTls_InitListen(void* context, const void* config,
     ctx->ssl_ctx = wolfSSL_CTX_new(wolfSSLv23_server_method());
 #endif
     if (!ctx->ssl_ctx) {
+        posixTransportTcp_CleanupListen(&ctx->tcpCtx);
         return WH_ERROR_ABORTED;
     }
 
@@ -409,6 +410,7 @@ int posixTransportTls_InitListen(void* context, const void* config,
     if (rc != WH_ERROR_OK) {
         wolfSSL_CTX_free(ctx->ssl_ctx);
         ctx->ssl_ctx = NULL;
+        posixTransportTcp_CleanupListen(&ctx->tcpCtx);
         return rc;
     }
 
