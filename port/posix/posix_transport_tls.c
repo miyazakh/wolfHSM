@@ -42,6 +42,11 @@
 #include <poll.h>
 
 
+/* Compile-time check: TLS recv functions pass PTTLS_PACKET_MAX_SIZE to
+ * wolfSSL_read, and callers provide WH_COMM_MTU-sized buffers. These must
+ * be equal to prevent buffer overflow. */
+typedef char pttls_size_check[(PTTLS_PACKET_MAX_SIZE == WH_COMM_MTU) ? 1 : -1];
+
 #ifndef WOLFHSM_CFG_NO_CRYPTO
 
 /* returns 1 (true) if the error passed in is a notice for non blocking
