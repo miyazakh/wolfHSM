@@ -247,6 +247,7 @@ int posixTransportTls_SendRequest(void* context, uint16_t size,
 
                     /* Close the failed socket fd and set state for retry */
                     if (ctx->tcpCtx.connect_fd_p1 != 0) {
+                        close(ctx->tcpCtx.connect_fd_p1 - 1);
                         ctx->tcpCtx.connect_fd_p1 = 0;
                     }
                     ctx->connect_fd_p1 = 0;
