@@ -1848,7 +1848,7 @@ int wh_Server_HandleKeyRequest(whServerContext* server, uint16_t magic,
 
         case WH_KEY_EXPORT: {
             whMessageKeystore_ExportRequest  req;
-            whMessageKeystore_ExportResponse resp;
+            whMessageKeystore_ExportResponse resp = {0};
             uint32_t                         keySz;
 
             /* translate request */
@@ -1872,8 +1872,8 @@ int wh_Server_HandleKeyRequest(whServerContext* server, uint16_t magic,
                 /* Only provide key output if no error */
                 if (ret == WH_ERROR_OK) {
                     resp.len = keySz;
+                    memcpy(resp.label, meta->label, sizeof(meta->label));
                 }
-                memcpy(resp.label, meta->label, sizeof(meta->label));
 
                 (void)WH_SERVER_NVM_UNLOCK(server);
             } /* WH_SERVER_NVM_LOCK() */
