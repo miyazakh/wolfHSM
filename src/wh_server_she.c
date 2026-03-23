@@ -43,6 +43,7 @@
 #include "wolfssl/wolfcrypt/wc_port.h"
 #include "wolfssl/wolfcrypt/aes.h"
 #include "wolfssl/wolfcrypt/cmac.h"
+#include "wolfssl/wolfcrypt/misc.h"
 #include "wolfhsm/wh_server_keystore.h"
 #endif /* !WOLFHSM_CFG_NO_CRYPTO */
 
@@ -385,7 +386,7 @@ static int _SecureBootFinish(whServerContext* server, uint16_t magic,
     }
     if (ret == 0) {
         /* compare and set either success or failure */
-        ret = memcmp(cmacOutput, macDigest, field);
+        ret = ConstantCompare(cmacOutput, macDigest, field);
         if (ret == 0) {
             server->she->sbState = WH_SHE_SB_SUCCESS;
             resp.status          = WH_SHE_ERC_NO_ERROR;
@@ -503,7 +504,7 @@ static int _LoadKey(whServerContext* server, uint16_t magic, uint16_t req_size,
             sizeof(cmacInput), tmpKey, WH_SHE_KEY_SZ, NULL, server->devId);
     }
     /* compare digest to M3 */
-    if (ret == 0 && memcmp(req.messageThree, cmacOutput, field) != 0) {
+    if (ret == 0 && ConstantCompare(req.messageThree, cmacOutput, field) != 0) {
         ret = WH_SHE_ERC_KEY_UPDATE_ERROR;
     }
     /* make K1 using AES-MP(authKey | WH_SHE_KEY_UPDATE_ENC_C) */
@@ -556,7 +557,7 @@ static int _LoadKey(whServerContext* server, uint16_t magic, uint16_t req_size,
         }
     }
     /* compare to UID */
-    else if (ret == 0 && memcmp(req.messageOne, server->she->uid,
+    else if (ret == 0 && ConstantCompare(req.messageOne, server->she->uid,
                                 sizeof(server->she->uid)) != 0) {
         ret = WH_SHE_ERC_KEY_UPDATE_ERROR;
     }
