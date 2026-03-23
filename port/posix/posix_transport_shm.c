@@ -36,7 +36,7 @@
 #include "port/posix/posix_transport_shm.h"
 
 /* Shared memory creation flags */
-#define PTSHM_CREATEMODE 0666
+#define PTSHM_CREATEMODE 0660
 
 /* Pad header to reasonable alignment */
 #define PTSHM_HEADER_SIZE 64
