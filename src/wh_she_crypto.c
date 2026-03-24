@@ -248,6 +248,12 @@ int wh_She_GenerateLoadableKey(uint8_t keyId,
                 messageFour, WH_SHE_M4_SZ, tmpKey, WH_SHE_KEY_SZ, NULL,
                 INVALID_DEVID);
     }
+
+    /* Clear buffers which may contain sensitive data */
+    memset(kdfInput, 0, sizeof(kdfInput));
+    memset(cmacOutput, 0, sizeof(cmacOutput));
+    memset(tmpKey, 0, sizeof(tmpKey));
+
     return ret;
 }
 
