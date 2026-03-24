@@ -193,27 +193,31 @@ static int _SetUid(whServerContext* server, uint16_t magic, uint16_t req_size,
                    const void* req_packet, uint16_t* out_resp_size,
                    void* resp_packet)
 {
-    (void)req_size;
-    (void)out_resp_size;
-
     int                         ret = WH_SHE_ERC_NO_ERROR;
-    whMessageShe_SetUidRequest  req;
-    whMessageShe_SetUidResponse resp;
+    whMessageShe_SetUidRequest  req = {0};
+    whMessageShe_SetUidResponse resp = {0};
 
-    (void)wh_MessageShe_TranslateSetUidRequest(
-        magic, (whMessageShe_SetUidRequest*)req_packet, &req);
+    if (req_size < sizeof(req)) {
+        ret = WH_ERROR_BUFFER_SIZE;
+    }
 
+    if (ret == 0) {
+        ret = wh_MessageShe_TranslateSetUidRequest(
+            magic, (whMessageShe_SetUidRequest*)req_packet, &req);
+    }
 
-    if (server->she->uidSet == 1) {
+    if ((ret == 0) && (server->she->uidSet == 1)) {
         ret = WH_SHE_ERC_SEQUENCE_ERROR;
     }
+
     if (ret == WH_SHE_ERC_NO_ERROR) {
         memcpy(server->she->uid, req.uid, sizeof(req.uid));
         server->she->uidSet = 1;
     }
 
-    resp.rc = ret;
+    resp.rc = _TranslateSheReturnCode(ret);
     (void)wh_MessageShe_TranslateSetUidResponse(magic, &resp, resp_packet);
+    *out_resp_size = sizeof(resp);
 
     return ret;
 }
@@ -222,18 +226,22 @@ static int _SecureBootInit(whServerContext* server, uint16_t magic,
                            uint16_t req_size, const void* req_packet,
                            uint16_t* out_resp_size, void* resp_packet)
 {
-    (void)req_size;
-
     int                                 ret = 0;
     uint32_t                            keySz;
     uint8_t                             macKey[WH_SHE_KEY_SZ];
-    whMessageShe_SecureBootInitRequest  req;
-    whMessageShe_SecureBootInitResponse resp;
+    whMessageShe_SecureBootInitRequest  req = {0};
+    whMessageShe_SecureBootInitResponse resp = {0};
 
-    (void)wh_MessageShe_TranslateSecureBootInitRequest(magic, req_packet, &req);
+    if (req_size < sizeof(req)) {
+        ret = WH_ERROR_BUFFER_SIZE;
+    }
+    if (ret == 0) {
+        ret = wh_MessageShe_TranslateSecureBootInitRequest(magic, req_packet,
+                                                           &req);
+    }
 
     /* if we aren't looking for init return error */
-    if (server->she->sbState != WH_SHE_SB_INIT) {
+    if ((ret == 0) && (server->she->sbState != WH_SHE_SB_INIT)) {
         ret = WH_SHE_ERC_SEQUENCE_ERROR;
     }
     if (ret == 0) {
@@ -299,23 +307,31 @@ static int _SecureBootUpdate(whServerContext* server, uint16_t magic,
                              uint16_t req_size, const void* req_packet,
                              uint16_t* out_resp_size, void* resp_packet)
 {
-    (void)req_size;
-
     int                                   ret = 0;
     uint8_t*                              in;
-    whMessageShe_SecureBootUpdateRequest  req;
-    whMessageShe_SecureBootUpdateResponse resp;
+    whMessageShe_SecureBootUpdateRequest  req = {0};
+    whMessageShe_SecureBootUpdateResponse resp = {0};
 
-    (void)wh_MessageShe_TranslateSecureBootUpdateRequest(magic, req_packet,
-                                                         &req);
+    if (req_size < sizeof(req)) {
+        ret = WH_ERROR_BUFFER_SIZE;
+    }
+    if (ret == 0) {
+        ret = wh_MessageShe_TranslateSecureBootUpdateRequest(magic, req_packet,
+                                                             &req);
+    }
 
     /* if we aren't looking for update return error */
-    if (server->she->sbState != WH_SHE_SB_UPDATE) {
+    if ((ret == 0) && (server->she->sbState != WH_SHE_SB_UPDATE)) {
         ret = WH_SHE_ERC_SEQUENCE_ERROR;
     }
     if (ret == 0) {
         /* the bootloader chunk is after the fixed fields */
         in = (uint8_t*)req_packet + sizeof(req);
+        if (req_size < (sizeof(req) + req.sz)) {
+            ret = WH_ERROR_BUFFER_SIZE;
+        }
+    }
+    if (ret == 0) {
         /* increment blSizeReceived */
         server->she->blSizeReceived += req.sz;
         /* check that we didn't exceed the expected bootloader size */
@@ -351,7 +367,6 @@ static int _SecureBootFinish(whServerContext* server, uint16_t magic,
                              uint16_t req_size, const void* req_packet,
                              uint16_t* out_resp_size, void* resp_packet)
 {
-    (void)req_size;
     (void)req_packet;
 
     int      ret = 0;
@@ -360,10 +375,14 @@ static int _SecureBootFinish(whServerContext* server, uint16_t magic,
     uint8_t  cmacOutput[AES_BLOCK_SIZE];
     uint8_t  macDigest[WH_SHE_KEY_SZ];
 
-    whMessageShe_SecureBootFinishResponse resp;
+    whMessageShe_SecureBootFinishResponse resp = {0};
+
+    if (req_size != 0) {
+        ret = WH_ERROR_BUFFER_SIZE;
+    }
 
     /* if we aren't looking for finish return error */
-    if (server->she->sbState != WH_SHE_SB_FINISH) {
+    if ((ret == 0) && (server->she->sbState != WH_SHE_SB_FINISH)) {
         ret = WH_SHE_ERC_SEQUENCE_ERROR;
     }
     /* call final */
@@ -409,47 +428,50 @@ static int _GetStatus(whServerContext* server, uint16_t magic,
                       uint16_t req_size, const void* req_packet,
                       uint16_t* out_resp_size, void* resp_packet)
 {
-    (void)req_size;
+    int ret = 0;
     (void)req_packet;
 
-    whMessageShe_GetStatusResponse resp;
+    whMessageShe_GetStatusResponse resp = {0};
 
-    /* TODO do we care about all the sreg fields? */
-    resp.sreg = 0;
-    /* SECURE_BOOT */
-    if (server->she->cmacKeyFound) {
-        resp.sreg |= WH_SHE_SREG_SECURE_BOOT;
+    if (req_size > 0) {
+        ret = WH_ERROR_BUFFER_SIZE;
     }
 
-    /* BOOT_FINISHED */
-    if (server->she->sbState == WH_SHE_SB_SUCCESS ||
-        server->she->sbState == WH_SHE_SB_FAILURE) {
-        resp.sreg |= WH_SHE_SREG_BOOT_FINISHED;
-    }
-    /* BOOT_OK */
-    if (server->she->sbState == WH_SHE_SB_SUCCESS) {
-        resp.sreg |= WH_SHE_SREG_BOOT_OK;
-    }
-    /* RND_INIT */
-    if (server->she->rndInited == 1) {
-        resp.sreg |= WH_SHE_SREG_RND_INIT;
+    if (ret == 0) {
+        /* TODO do we care about all the sreg fields? */
+        resp.sreg = 0;
+        /* SECURE_BOOT */
+        if (server->she->cmacKeyFound) {
+            resp.sreg |= WH_SHE_SREG_SECURE_BOOT;
+        }
+
+        /* BOOT_FINISHED */
+        if (server->she->sbState == WH_SHE_SB_SUCCESS ||
+            server->she->sbState == WH_SHE_SB_FAILURE) {
+            resp.sreg |= WH_SHE_SREG_BOOT_FINISHED;
+        }
+        /* BOOT_OK */
+        if (server->she->sbState == WH_SHE_SB_SUCCESS) {
+            resp.sreg |= WH_SHE_SREG_BOOT_OK;
+        }
+        /* RND_INIT */
+        if (server->she->rndInited == 1) {
+            resp.sreg |= WH_SHE_SREG_RND_INIT;
+        }
     }
 
     *out_resp_size = sizeof(resp);
-    resp.rc        = WH_SHE_ERC_NO_ERROR;
+    resp.rc        = _TranslateSheReturnCode(ret);
     (void)wh_MessageShe_TranslateGetStatusResponse(magic, &resp, resp_packet);
 
-    return 0;
+    return ret;
 }
 
 static int _LoadKey(whServerContext* server, uint16_t magic, uint16_t req_size,
                     const void* req_packet, uint16_t* out_resp_size,
                     void* resp_packet)
 {
-    (void)req_size;
-    (void)req_packet;
-
-    int           ret;
+    int           ret = 0;
     int           keyRet = 0;
     uint32_t      keySz;
     uint32_t      field;
@@ -467,16 +489,22 @@ static int _LoadKey(whServerContext* server, uint16_t magic, uint16_t req_size,
     uint8_t counter_buffer[WH_SHE_KEY_SZ] = {0};
 
     /* translate the request */
-    (void)wh_MessageShe_TranslateLoadKeyRequest(magic, req_packet, &req);
-
+    if (req_size < sizeof(req)) {
+        ret = WH_ERROR_BUFFER_SIZE;
+    }
+    if (ret == 0) {
+        ret = wh_MessageShe_TranslateLoadKeyRequest(magic, req_packet, &req);
+    }
 
     /* read the auth key by AuthID */
-    keySz = sizeof(kdfInput);
-    ret   = wh_Server_KeystoreReadKey(server,
-                                      WH_MAKE_KEYID(WH_KEYTYPE_SHE,
-                                                    server->comm->client_id,
-                                                    _PopAuthId(req.messageOne)),
-                                      NULL, kdfInput, &keySz);
+    if (ret == 0) {
+        keySz = sizeof(kdfInput);
+        ret = wh_Server_KeystoreReadKey(server,
+                                        WH_MAKE_KEYID(WH_KEYTYPE_SHE,
+                                                      server->comm->client_id,
+                                                      _PopAuthId(req.messageOne)),
+                                        NULL, kdfInput, &keySz);
+    }
     /* make K2 using AES-MP(authKey | WH_SHE_KEY_UPDATE_MAC_C) */
     if (ret == 0) {
         /* add WH_SHE_KEY_UPDATE_MAC_C to the input */
@@ -485,10 +513,11 @@ static int _LoadKey(whServerContext* server, uint16_t magic, uint16_t req_size,
         /* do kdf */
         ret = _AesMp16(server, kdfInput, keySz + sizeof(_SHE_KEY_UPDATE_MAC_C),
                        tmpKey);
+        if (ret != 0) {
+            ret = WH_SHE_ERC_GENERAL_ERROR;
+        }
     }
-    else {
-        ret = WH_SHE_ERC_KEY_NOT_AVAILABLE;
-    }
+
     /* cmac messageOne and messageTwo using K2 as the cmac key */
     if (ret == 0) {
         uint8_t cmacInput[sizeof(req.messageOne) + sizeof(req.messageTwo)];
@@ -670,22 +699,28 @@ static int _LoadPlainKey(whServerContext* server, uint16_t magic,
                          uint16_t req_size, const void* req_packet,
                          uint16_t* out_resp_size, void* resp_packet)
 {
-    (void)req_size;
-
     int           ret     = 0;
     whNvmMetadata meta[1] = {{0}};
 
-    whMessageShe_LoadPlainKeyRequest  req;
-    whMessageShe_LoadPlainKeyResponse resp;
+    whMessageShe_LoadPlainKeyRequest  req = {0};
+    whMessageShe_LoadPlainKeyResponse resp = {0};
 
-    (void)wh_MessageShe_TranslateLoadPlainKeyRequest(magic, req_packet, &req);
+    if (req_size < sizeof(req)) {
+        ret = WH_ERROR_BUFFER_SIZE;
+    }
+    if (ret == 0) {
+        ret = wh_MessageShe_TranslateLoadPlainKeyRequest(magic, req_packet,
+                                                         &req);
+    }
 
     meta->id  = WH_MAKE_KEYID(WH_KEYTYPE_SHE, server->comm->client_id,
                               WH_SHE_RAM_KEY_ID);
     meta->len = WH_SHE_KEY_SZ;
 
     /* cache if ram key, overwrite otherwise */
-    ret = wh_Server_KeystoreCacheKey(server, meta, req.key);
+    if (ret == 0) {
+        ret = wh_Server_KeystoreCacheKey(server, meta, req.key);
+    }
     if (ret == 0) {
         server->she->ramKeyPlain = 1;
     }
@@ -703,7 +738,6 @@ static int _ExportRamKey(whServerContext* server, uint16_t magic,
                          uint16_t req_size, const void* req_packet,
                          uint16_t* out_resp_size, void* resp_packet)
 {
-    (void)req_size;
     (void)req_packet;
 
     int                               ret = 0;
@@ -714,10 +748,14 @@ static int _ExportRamKey(whServerContext* server, uint16_t magic,
     uint8_t                           tmpKey[WH_SHE_KEY_SZ];
     whNvmMetadata                     meta[1];
     uint32_t                          counter_val;
-    whMessageShe_ExportRamKeyResponse resp;
+    whMessageShe_ExportRamKeyResponse resp = {0};
+
+    if (req_size != 0) {
+        ret = WH_ERROR_BUFFER_SIZE;
+    }
 
     /* check if ram key was loaded by CMD_LOAD_PLAIN_KEY */
-    if (server->she->ramKeyPlain == 0) {
+    if ((ret == 0) && (server->she->ramKeyPlain == 0)) {
         ret = WH_SHE_ERC_KEY_INVALID;
     }
     /* read the auth key by AuthID */
@@ -863,7 +901,6 @@ static int _InitRnd(whServerContext* server, uint16_t magic, uint16_t req_size,
                     const void* req_packet, uint16_t* out_resp_size,
                     void* resp_packet)
 {
-    (void)req_size;
     (void)req_packet;
 
     int                          ret = 0;
@@ -872,10 +909,14 @@ static int _InitRnd(whServerContext* server, uint16_t magic, uint16_t req_size,
     uint8_t                      cmacOutput[AES_BLOCK_SIZE];
     uint8_t                      tmpKey[WH_SHE_KEY_SZ];
     whNvmMetadata                meta[1] = {0};
-    whMessageShe_InitRngResponse resp;
+    whMessageShe_InitRngResponse resp = {0};
+
+    if (req_size != 0) {
+        ret = WH_ERROR_BUFFER_SIZE;
+    }
 
     /* check that init hasn't already been called since startup */
-    if (server->she->rndInited == 1) {
+    if ((ret == 0) && (server->she->rndInited == 1)) {
         ret = WH_SHE_ERC_SEQUENCE_ERROR;
     }
     /* read secret key */
@@ -964,14 +1005,17 @@ static int _Rnd(whServerContext* server, uint16_t magic, uint16_t req_size,
                 const void* req_packet, uint16_t* out_resp_size,
                 void* resp_packet)
 {
-    (void)req_size;
     (void)req_packet;
 
     int                      ret = 0;
-    whMessageShe_RndResponse resp;
+    whMessageShe_RndResponse resp = {0};
+
+    if (req_size != 0) {
+        ret = WH_ERROR_BUFFER_SIZE;
+    }
 
     /* check that rng has been inited */
-    if (server->she->rndInited == 0) {
+    if ((ret == 0) && (server->she->rndInited == 0)) {
         ret = WH_SHE_ERC_RNG_SEED;
     }
 
@@ -1011,19 +1055,22 @@ static int _ExtendSeed(whServerContext* server, uint16_t magic,
                        uint16_t req_size, const void* req_packet,
                        uint16_t* out_resp_size, void* resp_packet)
 {
-    (void)req_size;
-
     int                             ret = 0;
     uint32_t                        keySz;
     uint8_t                         kdfInput[WH_SHE_KEY_SZ * 2];
     whNvmMetadata                   meta[1] = {0};
-    whMessageShe_ExtendSeedRequest  req;
-    whMessageShe_ExtendSeedResponse resp;
+    whMessageShe_ExtendSeedRequest  req = {0};
+    whMessageShe_ExtendSeedResponse resp = {0};
 
-    (void)wh_MessageShe_TranslateExtendSeedRequest(magic, req_packet, &req);
+    if (req_size < sizeof(req)) {
+        ret = WH_ERROR_BUFFER_SIZE;
+    }
+    if (ret == 0) {
+        ret = wh_MessageShe_TranslateExtendSeedRequest(magic, req_packet, &req);
+    }
 
     /* check that rng has been inited */
-    if (server->she->rndInited == 0) {
+    if ((ret == 0) && (server->she->rndInited == 0)) {
         ret = WH_SHE_ERC_RNG_SEED;
     }
     if (ret == 0) {
@@ -1075,38 +1122,52 @@ static int _EncEcb(whServerContext* server, uint16_t magic, uint16_t req_size,
                    const void* req_packet, uint16_t* out_resp_size,
                    void* resp_packet)
 {
-    (void)req_size;
-
-    int      ret;
+    int      ret = 0;
     uint32_t field;
     uint32_t keySz;
     uint8_t* in;
     uint8_t* out;
     uint8_t  tmpKey[WH_SHE_KEY_SZ];
 
-    whMessageShe_EncEcbRequest  req;
-    whMessageShe_EncEcbResponse resp;
+    whMessageShe_EncEcbRequest  req = {0};
+    whMessageShe_EncEcbResponse resp = {0};
 
     /* in and out are after the fixed sized fields */
     in  = (uint8_t*)req_packet + sizeof(req);
     out = (uint8_t*)resp_packet + sizeof(resp);
 
-    (void)wh_MessageShe_TranslateEncEcbRequest(magic, req_packet, &req);
-
-    /* load the key */
-    keySz = WH_SHE_KEY_SZ;
-    field = req.sz;
-    /* only process a multiple of block size */
-    field -= (field % AES_BLOCK_SIZE);
-    ret = wh_Server_KeystoreReadKey(
-        server,
-        WH_MAKE_KEYID(WH_KEYTYPE_SHE, server->comm->client_id, req.keyId), NULL,
-        tmpKey, &keySz);
-    if (ret == 0) {
-        ret = wc_AesInit(server->she->sheAes, NULL, server->devId);
+    if (req_size < sizeof(req)) {
+        ret = WH_ERROR_BUFFER_SIZE;
     }
-    else {
-        ret = WH_SHE_ERC_KEY_NOT_AVAILABLE;
+    if (ret == 0) {
+        ret = wh_MessageShe_TranslateEncEcbRequest(magic, req_packet, &req);
+    }
+    if (ret == 0) {
+        keySz = WH_SHE_KEY_SZ;
+        field = req.sz;
+        /* only process a multiple of block size */
+        field -= (field % AES_BLOCK_SIZE);
+        /* Guard against 32-bit size_t overflow: check field alone first */
+        if (field > WOLFHSM_CFG_COMM_DATA_LEN ||
+            req_size < (sizeof(req) + field)) {
+            ret = WH_ERROR_BUFFER_SIZE;
+        }
+        else if ((sizeof(resp) + field) > WOLFHSM_CFG_COMM_DATA_LEN) {
+            ret = WH_ERROR_BUFFER_SIZE;
+        }
+    }
+    if (ret == 0) {
+        /* load the key */
+        ret = wh_Server_KeystoreReadKey(
+            server, WH_MAKE_KEYID(WH_KEYTYPE_SHE, server->comm->client_id,
+                                  req.keyId),
+            NULL, tmpKey, &keySz);
+        if (ret == 0) {
+            ret = wc_AesInit(server->she->sheAes, NULL, server->devId);
+        }
+        else {
+            ret = WH_SHE_ERC_KEY_NOT_AVAILABLE;
+        }
     }
     if (ret == 0) {
         ret = wc_AesSetKey(server->she->sheAes, tmpKey, keySz, NULL,
@@ -1134,38 +1195,54 @@ static int _EncCbc(whServerContext* server, uint16_t magic, uint16_t req_size,
                    const void* req_packet, uint16_t* out_resp_size,
                    void* resp_packet)
 {
-    (void)req_size;
-
-    int                         ret;
+    int                         ret = 0;
     uint32_t                    field;
     uint32_t                    keySz;
     uint8_t*                    in;
     uint8_t*                    out;
     uint8_t                     tmpKey[WH_SHE_KEY_SZ];
-    whMessageShe_EncCbcRequest  req;
-    whMessageShe_EncCbcResponse resp;
+    whMessageShe_EncCbcRequest  req = {0};
+    whMessageShe_EncCbcResponse resp = {0};
 
     /* in and out are after the fixed sized fields */
     in  = (uint8_t*)req_packet + sizeof(req);
     out = (uint8_t*)resp_packet + sizeof(resp);
 
-    (void)wh_MessageShe_TranslateEncCbcRequest(magic, req_packet, &req);
-
-    /* load the key */
-    keySz = WH_SHE_KEY_SZ;
-    field = req.sz;
-    /* only process a multiple of block size */
-    field -= (field % AES_BLOCK_SIZE);
-    ret = wh_Server_KeystoreReadKey(
-        server,
-        WH_MAKE_KEYID(WH_KEYTYPE_SHE, server->comm->client_id, req.keyId), NULL,
-        tmpKey, &keySz);
+    if (req_size < sizeof(req)) {
+        ret = WH_ERROR_BUFFER_SIZE;
+    }
 
     if (ret == 0) {
-        ret = wc_AesInit(server->she->sheAes, NULL, server->devId);
+        ret = wh_MessageShe_TranslateEncCbcRequest(magic, req_packet, &req);
     }
-    else {
-        ret = WH_SHE_ERC_KEY_NOT_AVAILABLE;
+
+    if (ret == 0) {
+        keySz = WH_SHE_KEY_SZ;
+        field = req.sz;
+        /* only process a multiple of block size */
+        field -= (field % AES_BLOCK_SIZE);
+        /* Guard against 32-bit size_t overflow: check field alone first */
+        if (field > WOLFHSM_CFG_COMM_DATA_LEN ||
+            req_size < (sizeof(req) + field)) {
+            ret = WH_ERROR_BUFFER_SIZE;
+        }
+        else if ((sizeof(resp) + field) > WOLFHSM_CFG_COMM_DATA_LEN) {
+            ret = WH_ERROR_BUFFER_SIZE;
+        }
+    }
+
+    if (ret == 0) {
+        /* load the key */
+        ret = wh_Server_KeystoreReadKey(
+            server, WH_MAKE_KEYID(WH_KEYTYPE_SHE, server->comm->client_id,
+                                  req.keyId),
+            NULL, tmpKey, &keySz);
+        if (ret == 0) {
+            ret = wc_AesInit(server->she->sheAes, NULL, server->devId);
+        }
+        else {
+            ret = WH_SHE_ERC_KEY_NOT_AVAILABLE;
+        }
     }
 
     if (ret == 0) {
@@ -1199,38 +1276,55 @@ static int _DecEcb(whServerContext* server, uint16_t magic, uint16_t req_size,
                    const void* req_packet, uint16_t* out_resp_size,
                    void* resp_packet)
 {
-    (void)req_size;
-
-    int      ret;
+    int      ret = 0;
     uint32_t field;
     uint32_t keySz;
     uint8_t* in;
     uint8_t* out;
     uint8_t  tmpKey[WH_SHE_KEY_SZ];
 
-    whMessageShe_DecEcbRequest  req;
-    whMessageShe_DecEcbResponse resp;
+    whMessageShe_DecEcbRequest  req = {0};
+    whMessageShe_DecEcbResponse resp = {0};
 
     /* in and out are after the fixed sized fields */
     in  = (uint8_t*)req_packet + sizeof(req);
     out = (uint8_t*)resp_packet + sizeof(resp);
 
-    (void)wh_MessageShe_TranslateDecEcbRequest(magic, req_packet, &req);
-
-    /* load the key */
-    keySz = WH_SHE_KEY_SZ;
-    field = req.sz;
-    /* only process a multiple of block size */
-    field -= (field % AES_BLOCK_SIZE);
-    ret = wh_Server_KeystoreReadKey(
-        server,
-        WH_MAKE_KEYID(WH_KEYTYPE_SHE, server->comm->client_id, req.keyId), NULL,
-        tmpKey, &keySz);
-    if (ret == 0) {
-        ret = wc_AesInit(server->she->sheAes, NULL, server->devId);
+    if (req_size < sizeof(req)) {
+        ret = WH_ERROR_BUFFER_SIZE;
     }
-    else {
-        ret = WH_SHE_ERC_KEY_NOT_AVAILABLE;
+
+    if (ret == 0) {
+        ret = wh_MessageShe_TranslateDecEcbRequest(magic, req_packet, &req);
+    }
+
+    if (ret == 0) {
+        keySz = WH_SHE_KEY_SZ;
+        field = req.sz;
+        /* only process a multiple of block size */
+        field -= (field % AES_BLOCK_SIZE);
+        /* Guard against 32-bit size_t overflow: check field alone first */
+        if (field > WOLFHSM_CFG_COMM_DATA_LEN ||
+            req_size < (sizeof(req) + field)) {
+            ret = WH_ERROR_BUFFER_SIZE;
+        }
+        else if ((sizeof(resp) + field) > WOLFHSM_CFG_COMM_DATA_LEN) {
+            ret = WH_ERROR_BUFFER_SIZE;
+        }
+    }
+
+    if (ret == 0) {
+        /* load the key */
+        ret = wh_Server_KeystoreReadKey(
+            server, WH_MAKE_KEYID(WH_KEYTYPE_SHE, server->comm->client_id,
+                                  req.keyId),
+            NULL, tmpKey, &keySz);
+        if (ret == 0) {
+            ret = wc_AesInit(server->she->sheAes, NULL, server->devId);
+        }
+        else {
+            ret = WH_SHE_ERC_KEY_NOT_AVAILABLE;
+        }
     }
 
     if (ret == 0) {
@@ -1263,38 +1357,54 @@ static int _DecCbc(whServerContext* server, uint16_t magic, uint16_t req_size,
                    const void* req_packet, uint16_t* out_resp_size,
                    void* resp_packet)
 {
-    (void)req_size;
-
-    int                         ret;
+    int                         ret = 0;
     uint32_t                    field;
     uint32_t                    keySz;
     uint8_t*                    in;
     uint8_t*                    out;
     uint8_t                     tmpKey[WH_SHE_KEY_SZ];
-    whMessageShe_DecCbcRequest  req;
-    whMessageShe_DecCbcResponse resp;
+    whMessageShe_DecCbcRequest  req = {0};
+    whMessageShe_DecCbcResponse resp = {0};
 
     /* in and out are after the fixed sized fields */
     in  = (uint8_t*)req_packet + sizeof(req);
     out = (uint8_t*)resp_packet + sizeof(resp);
 
-    (void)wh_MessageShe_TranslateDecCbcRequest(magic, req_packet, &req);
-
-    /* load the key */
-    keySz = WH_SHE_KEY_SZ;
-    field = req.sz;
-    /* only process a multiple of block size */
-    field -= (field % AES_BLOCK_SIZE);
-    ret = wh_Server_KeystoreReadKey(
-        server,
-        WH_MAKE_KEYID(WH_KEYTYPE_SHE, server->comm->client_id, req.keyId), NULL,
-        tmpKey, &keySz);
+    if (req_size < sizeof(req)) {
+        ret = WH_ERROR_BUFFER_SIZE;
+    }
 
     if (ret == 0) {
-        ret = wc_AesInit(server->she->sheAes, NULL, server->devId);
+        ret = wh_MessageShe_TranslateDecCbcRequest(magic, req_packet, &req);
     }
-    else {
-        ret = WH_SHE_ERC_KEY_NOT_AVAILABLE;
+
+    if (ret == 0) {
+        keySz = WH_SHE_KEY_SZ;
+        field = req.sz;
+        /* only process a multiple of block size */
+        field -= (field % AES_BLOCK_SIZE);
+        /* Guard against 32-bit size_t overflow: check field alone first */
+        if (field > WOLFHSM_CFG_COMM_DATA_LEN ||
+            req_size < (sizeof(req) + field)) {
+            ret = WH_ERROR_BUFFER_SIZE;
+        }
+        else if ((sizeof(resp) + field) > WOLFHSM_CFG_COMM_DATA_LEN) {
+            ret = WH_ERROR_BUFFER_SIZE;
+        }
+    }
+
+    if (ret == 0) {
+        /* load the key */
+        ret = wh_Server_KeystoreReadKey(
+            server, WH_MAKE_KEYID(WH_KEYTYPE_SHE, server->comm->client_id,
+                                  req.keyId),
+            NULL, tmpKey, &keySz);
+        if (ret == 0) {
+            ret = wc_AesInit(server->she->sheAes, NULL, server->devId);
+        }
+        else {
+            ret = WH_SHE_ERC_KEY_NOT_AVAILABLE;
+        }
     }
 
     if (ret == 0) {
@@ -1328,35 +1438,48 @@ static int _GenerateMac(whServerContext* server, uint16_t magic,
                         uint16_t req_size, const void* req_packet,
                         uint16_t* out_resp_size, void* resp_packet)
 {
-    (void)req_size;
-
-    int                         ret;
+    int                         ret = 0;
     uint32_t                    field = AES_BLOCK_SIZE;
     uint32_t                    keySz;
     uint8_t*                    in;
     uint8_t                     tmpKey[WH_SHE_KEY_SZ];
-    whMessageShe_GenMacRequest  req;
-    whMessageShe_GenMacResponse resp;
+    whMessageShe_GenMacRequest  req = {0};
+    whMessageShe_GenMacResponse resp = {0};
 
     /* in and out are after the fixed sized fields */
     in = (uint8_t*)req_packet + sizeof(req);
 
-    (void)wh_MessageShe_TranslateGenMacRequest(magic, req_packet, &req);
-
-    /* load the key */
-    keySz = WH_SHE_KEY_SZ;
-    ret   = wh_Server_KeystoreReadKey(
-          server,
-          WH_MAKE_KEYID(WH_KEYTYPE_SHE, server->comm->client_id, req.keyId), NULL,
-          tmpKey, &keySz);
-    /* hash the message */
-    if (ret == 0) {
-        ret = wc_AesCmacGenerate_ex(server->she->sheCmac, resp.mac,
-                                    (word32*)&field, in, req.sz, tmpKey,
-                                    WH_SHE_KEY_SZ, NULL, server->devId);
+    if (req_size < sizeof(req)) {
+        ret = WH_ERROR_BUFFER_SIZE;
     }
-    else {
-        ret = WH_SHE_ERC_KEY_NOT_AVAILABLE;
+
+    if (ret == 0) {
+        ret = wh_MessageShe_TranslateGenMacRequest(magic, req_packet, &req);
+    }
+
+    if (ret == 0) {
+        if (req_size < (sizeof(req) + req.sz)) {
+            ret = WH_ERROR_BUFFER_SIZE;
+        }
+    }
+
+    if (ret == 0) {
+        /* load the key */
+        keySz = WH_SHE_KEY_SZ;
+        ret   = wh_Server_KeystoreReadKey(
+              server,
+              WH_MAKE_KEYID(WH_KEYTYPE_SHE, server->comm->client_id,
+                            req.keyId),
+              NULL, tmpKey, &keySz);
+        /* hash the message */
+        if (ret == 0) {
+            ret = wc_AesCmacGenerate_ex(server->she->sheCmac, resp.mac,
+                                        (word32*)&field, in, req.sz, tmpKey,
+                                        WH_SHE_KEY_SZ, NULL, server->devId);
+        }
+        else {
+            ret = WH_SHE_ERC_KEY_NOT_AVAILABLE;
+        }
     }
 
     resp.rc = _TranslateSheReturnCode(ret);
@@ -1370,44 +1493,63 @@ static int _VerifyMac(whServerContext* server, uint16_t magic,
                       uint16_t req_size, const void* req_packet,
                       uint16_t* out_resp_size, void* resp_packet)
 {
-    (void)req_size;
-
-    int                            ret;
+    int                            ret = 0;
     uint32_t                       keySz;
+    uint32_t                       totalLen;
     uint8_t*                       message;
     uint8_t*                       mac;
     uint8_t                        tmpKey[WH_SHE_KEY_SZ];
-    whMessageShe_VerifyMacRequest  req;
-    whMessageShe_VerifyMacResponse resp;
+    whMessageShe_VerifyMacRequest  req = {0};
+    whMessageShe_VerifyMacResponse resp = {0};
 
+    if (req_size < sizeof(req)) {
+        ret = WH_ERROR_BUFFER_SIZE;
+    }
 
-    (void)wh_MessageShe_TranslateVerifyMacRequest(magic, req_packet, &req);
-
-    /* in and mac are after the fixed sized fields */
-    message = (uint8_t*)req_packet + sizeof(req);
-    mac     = message + req.messageLen;
-
-    /* load the key */
-    keySz = WH_SHE_KEY_SZ;
-    ret   = wh_Server_KeystoreReadKey(
-          server,
-          WH_MAKE_KEYID(WH_KEYTYPE_SHE, server->comm->client_id, req.keyId), NULL,
-          tmpKey, &keySz);
-    /* verify the mac */
     if (ret == 0) {
-        ret = wc_AesCmacVerify_ex(server->she->sheCmac, mac, req.macLen,
-                                  message, req.messageLen, tmpKey, keySz, NULL,
-                                  server->devId);
-        /* only evaluate if key was found */
-        if (ret == 0) {
-            resp.status = 0;
+        ret = wh_MessageShe_TranslateVerifyMacRequest(magic, req_packet, &req);
+    }
+
+    if (ret == 0) {
+        /* in and mac are after the fixed sized fields */
+        message = (uint8_t*)req_packet + sizeof(req);
+        mac     = NULL;
+        totalLen = req.messageLen + req.macLen;
+        /* Guard against 32-bit size_t overflow: check totalLen alone first */
+        if ((totalLen < req.messageLen) ||
+            (totalLen > WOLFHSM_CFG_COMM_DATA_LEN) ||
+            (req_size < (sizeof(req) + totalLen))) {
+            ret = WH_ERROR_BUFFER_SIZE;
         }
         else {
-            resp.status = 1;
+            mac = message + req.messageLen;
         }
     }
-    else {
-        ret = WH_SHE_ERC_KEY_NOT_AVAILABLE;
+
+    /* load the key */
+    if (ret == 0) {
+        keySz = WH_SHE_KEY_SZ;
+        ret   = wh_Server_KeystoreReadKey(
+              server,
+              WH_MAKE_KEYID(WH_KEYTYPE_SHE, server->comm->client_id,
+                            req.keyId),
+              NULL, tmpKey, &keySz);
+        /* verify the mac */
+        if (ret == 0) {
+            ret = wc_AesCmacVerify_ex(server->she->sheCmac, mac, req.macLen,
+                                      message, req.messageLen, tmpKey, keySz,
+                                      NULL, server->devId);
+            /* only evaluate if key was found */
+            if (ret == 0) {
+                resp.status = 0;
+            }
+            else {
+                resp.status = 1;
+            }
+        }
+        else {
+            ret = WH_SHE_ERC_KEY_NOT_AVAILABLE;
+        }
     }
 
     resp.rc = _TranslateSheReturnCode(ret);
@@ -1426,8 +1568,8 @@ static int _ReportInvalidSheState(whServerContext* server, uint16_t magic,
                                   const void* req_packet,
                                   uint16_t* out_resp_size, void* resp_packet)
 {
-    (void)req_size;
     (void)req_packet;
+    (void)req_size;
 
     /* TODO does SHE specify what this error should be? */
     /* if we haven't secure booted, only allow secure boot requests */
@@ -1595,10 +1737,15 @@ int wh_Server_HandleSheRequest(whServerContext* server, uint16_t magic,
         return WH_ERROR_BADARGS;
     }
 
+    /* Use out_resp_size as the indicator of whether a response was generated 
+     * regardless of the value returned by the handler. Non-zero value indicates 
+     * a response was generated.*/
+    *out_resp_size = 0;
+
     ret = _ReportInvalidSheState(server, magic, action, req_size, req_packet,
                                  out_resp_size, resp_packet);
     if (ret != 0) {
-        return ret;
+        return (*out_resp_size > 0) ? 0 : ret;
     }
 
     switch (action) {
@@ -1740,7 +1887,7 @@ int wh_Server_HandleSheRequest(whServerContext* server, uint16_t magic,
         server->she->cmacKeyFound   = 0;
     }
 
-    return ret;
+    return (*out_resp_size > 0) ? 0 : ret;
 }
 
 #endif /* WOLFHSM_CFG_SHE_EXTENSION */
