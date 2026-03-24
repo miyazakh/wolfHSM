@@ -39,6 +39,8 @@ ARCHFLAGS ?=
 CFLAGS_EXTRA = -Werror -Wall -Wextra
 # Place functions / data into separate sections to allow unused code removal
 CFLAGS_EXTRA += -ffunction-sections -fdata-sections
+# Auto-generate header dependency files (.d) alongside object files
+CFLAGS_EXTRA += -MMD -MP
 
 # C standard to use (default to c90 if not specified)
 CSTD 		?= -std=c90
@@ -277,6 +279,9 @@ $(BUILD_DIR)/%.o: %.c
 	@echo "Compiling C file: $(notdir $<)"
 	$(CMD_ECHO) $(CC) $(CFLAGS) $(DEF) $(INC) -c -o $@ $<
 
+# Include auto-generated dependency files (if they exist)
+-include $(OBJS_C:.o=.d)
+
 $(BUILD_DIR)/$(BIN).elf: $(OBJS_ASM) $(OBJS_C)
 	@echo "Linking ELF binary: $(notdir $@)"
 	$(CMD_ECHO) $(CC) $(LDFLAGS) $(SRC_LD) -o $@ $^ $(LIBS)
@@ -292,17 +297,15 @@ clean:
 			$(BUILD_DIR)/*.hex \
 			$(BUILD_DIR)/*.map \
 			$(BUILD_DIR)/*.o \
+			$(BUILD_DIR)/*.d \
 			$(BUILD_DIR)/*.a \
 			$(BUILD_DIR)/*.sym \
 			$(BUILD_DIR)/*.disasm \
 			$(BUILD_DIR)/*.gcda \
 			$(BUILD_DIR)/*.gcno
 
-# No prereq's here to stop from rebuilding with different options
-run:
-ifeq (,$(wildcard $(BUILD_DIR)/$(BIN).elf))
-	$(error $(BUILD_DIR)/$(BIN).elf not found.  Try: make)
-else
+# Rebuild if sources or flags changed before running
+run: build_app
 ifeq ($(TSAN),1)
 	# TSAN options:
 	# - fail fast on first data race detected
@@ -311,7 +314,6 @@ ifeq ($(TSAN),1)
 	TSAN_OPTIONS="halt_on_error=1:exitcode=66:suppressions=$(PROJECT_DIR)/tsan.supp" $(BUILD_DIR)/$(BIN).elf
 else
 	$(BUILD_DIR)/$(BIN).elf
-endif
 endif
 
 # Coverage target: build with coverage, run tests, and generate report
