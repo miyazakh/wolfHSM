@@ -26,6 +26,10 @@ int wh_Client_KeyWrapRequest(whClientContext*   ctx,
         return WH_ERROR_BADARGS;
     }
 
+    if (keySz == 0 || keySz > WOLFHSM_CFG_KEYWRAP_MAX_KEY_SIZE) {
+        return WH_ERROR_BADARGS;
+    }
+
     /* Set the request pointer to the shared comm data memory region */
     req =
         (whMessageKeystore_KeyWrapRequest*)wh_CommClient_GetDataPtr(ctx->comm);
@@ -136,6 +140,10 @@ int wh_Client_KeyUnwrapAndExportRequest(whClientContext*   ctx,
     uint8_t*                                     reqData;
 
     if (ctx == NULL || wrappedKeyIn == NULL) {
+        return WH_ERROR_BADARGS;
+    }
+
+    if (wrappedKeySz == 0 || wrappedKeySz > WOLFHSM_CFG_KEYWRAP_MAX_KEY_SIZE) {
         return WH_ERROR_BADARGS;
     }
 
@@ -256,6 +264,10 @@ int wh_Client_KeyUnwrapAndCacheRequest(whClientContext*   ctx,
     if (ctx == NULL || wrappedKeyIn == NULL)
         return WH_ERROR_BADARGS;
 
+    if (wrappedKeySz == 0 || wrappedKeySz > WOLFHSM_CFG_KEYWRAP_MAX_KEY_SIZE) {
+        return WH_ERROR_BADARGS;
+    }
+
     /* Set the request pointer to the shared comm data memory region */
     req = (whMessageKeystore_KeyUnwrapAndCacheRequest*)wh_CommClient_GetDataPtr(
         ctx->comm);
@@ -354,6 +366,10 @@ int wh_Client_DataWrapRequest(whClientContext*   ctx,
     uint8_t*                           reqData;
 
     if (ctx == NULL || dataIn == NULL) {
+        return WH_ERROR_BADARGS;
+    }
+
+    if (dataInSz == 0 || dataInSz > WOLFHSM_CFG_KEYWRAP_MAX_DATA_SIZE) {
         return WH_ERROR_BADARGS;
     }
 
@@ -462,6 +478,11 @@ int wh_Client_DataUnwrapRequest(whClientContext*   ctx,
     uint8_t*                             reqData;
 
     if (ctx == NULL || wrappedDataIn == NULL) {
+        return WH_ERROR_BADARGS;
+    }
+
+    if (wrappedDataInSz == 0 ||
+        wrappedDataInSz > WOLFHSM_CFG_KEYWRAP_MAX_DATA_SIZE) {
         return WH_ERROR_BADARGS;
     }
 
