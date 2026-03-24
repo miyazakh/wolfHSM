@@ -4228,7 +4228,8 @@ static int whTestCrypto_MlDsaWolfCrypt(whClientContext* ctx, int devId,
     }
 
     /* Sign message */
-    ret = wc_MlDsaKey_Sign(&key, sig, &sigSz, msg, sizeof(msg), rng);
+    ret = wc_MlDsaKey_SignCtx(&key, NULL, 0, sig, &sigSz, msg, sizeof(msg),
+                              rng);
     if (ret != 0) {
         WH_ERROR_PRINT("Failed to sign with ML DSA: %d\n", ret);
         wc_MlDsaKey_Free(&key);
@@ -4236,7 +4237,8 @@ static int whTestCrypto_MlDsaWolfCrypt(whClientContext* ctx, int devId,
     }
 
     /* Verify signature */
-    ret = wc_MlDsaKey_Verify(&key, sig, sigSz, msg, sizeof(msg), &verified);
+    ret = wc_MlDsaKey_VerifyCtx(&key, sig, sigSz, NULL, 0, msg, sizeof(msg),
+                                &verified);
     if (ret != 0) {
         WH_ERROR_PRINT("Failed to verify ML DSA signature: %d\n", ret);
         wc_MlDsaKey_Free(&key);
@@ -4250,7 +4252,8 @@ static int whTestCrypto_MlDsaWolfCrypt(whClientContext* ctx, int devId,
         /* Modify signature to ensure verification fails */
         sig[0] ^= 1;
 
-        ret = wc_MlDsaKey_Verify(&key, sig, sigSz, msg, sizeof(msg), &verified);
+        ret = wc_MlDsaKey_VerifyCtx(&key, sig, sigSz, NULL, 0, msg,
+                                    sizeof(msg), &verified);
         if (ret != 0) {
             WH_ERROR_PRINT("Failed to verify modified ML DSA signature: %d\n",
                            ret);
@@ -5042,8 +5045,9 @@ int whTestCrypto_MlDsaVerifyOnlyDma(whClientContext* ctx, int devId,
     /* Verify the message signature */
     if (ret == 0) {
         int verifyResult;
-        ret = wc_MlDsaKey_Verify(key, ml_dsa_44_sig, sizeof(ml_dsa_44_sig),
-                                 test_msg, sizeof(test_msg), &verifyResult);
+        ret = wc_MlDsaKey_VerifyCtx(key, ml_dsa_44_sig, sizeof(ml_dsa_44_sig),
+                                    NULL, 0, test_msg, sizeof(test_msg),
+                                    &verifyResult);
         if (ret != 0) {
             WH_ERROR_PRINT("Signature did not verify\n");
         }

@@ -787,7 +787,7 @@ static int _ExportRamKey(whServerContext* server, uint16_t magic,
         /* set the counter, flags and ram key */
         memset(resp.messageTwo, 0, sizeof(resp.messageTwo));
         /* set count to 1 */
-        counter_val = (wh_Utils_htonl(1) << 4);
+        counter_val = wh_Utils_htonl(1 << 4);
         memcpy(resp.messageTwo, &counter_val, sizeof(uint32_t));
         keySz    = WH_SHE_KEY_SZ;
         ret      = wh_Server_KeystoreReadKey(
@@ -857,7 +857,7 @@ static int _ExportRamKey(whServerContext* server, uint16_t magic,
     if (ret == 0) {
         memset(resp.messageFour, 0, sizeof(resp.messageFour));
         /* set counter to 1, pad with 1 bit */
-        counter_val = (wh_Utils_htonl(1) << 4);
+        counter_val = wh_Utils_htonl(1 << 4);
         memcpy(resp.messageFour + WH_SHE_KEY_SZ, &counter_val,
                sizeof(uint32_t));
         resp.messageFour[WH_SHE_KEY_SZ + 3] |= 0x08;
@@ -1539,12 +1539,15 @@ static int _VerifyMac(whServerContext* server, uint16_t magic,
             ret = wc_AesCmacVerify_ex(server->she->sheCmac, mac, req.macLen,
                                       message, req.messageLen, tmpKey, keySz,
                                       NULL, server->devId);
-            /* only evaluate if key was found */
             if (ret == 0) {
                 resp.status = 0;
             }
             else {
+                /* Verify is allowed to fail, per SHE spec.
+                   Capture status in the response, but return success to ensure
+                   that the response is sent. */
                 resp.status = 1;
+                ret = 0;
             }
         }
         else {

@@ -714,7 +714,8 @@ static int _benchMlDsaSign(whClientContext* client, whBenchOpContext* ctx,
 
         /* Time only the sign operation */
         benchStartRet = wh_Bench_StartOp(ctx, id);
-        ret = wc_MlDsaKey_Sign(&key, sig, &localSigSz, msg, sizeof(msg), rng);
+        ret = wc_MlDsaKey_SignCtx(&key, NULL, 0, sig, &localSigSz, msg,
+                                  sizeof(msg), rng);
         benchStopRet = wh_Bench_StopOp(ctx, id);
 
         if (benchStartRet != 0) {
@@ -723,7 +724,7 @@ static int _benchMlDsaSign(whClientContext* client, whBenchOpContext* ctx,
             break;
         }
         if (ret != 0) {
-            WH_BENCH_PRINTF("Failed to wc_MlDsaKey_Sign %d\n", ret);
+            WH_BENCH_PRINTF("Failed to wc_MlDsaKey_SignCtx %d\n", ret);
             break;
         }
         if (benchStopRet != 0) {
@@ -844,8 +845,9 @@ static int _benchMlDsaVerify(whClientContext* client, whBenchOpContext* ctx,
 
         /* Time only the verify operation */
         benchStartRet = wh_Bench_StartOp(ctx, id);
-        ret = wc_MlDsaKey_Verify(&key, ml_dsa_44_sig, sizeof(ml_dsa_44_sig),
-                                 test_msg, sizeof(test_msg), &verified);
+        ret = wc_MlDsaKey_VerifyCtx(&key, ml_dsa_44_sig,
+                                    sizeof(ml_dsa_44_sig), NULL, 0, test_msg,
+                                    sizeof(test_msg), &verified);
         benchStopRet = wh_Bench_StopOp(ctx, id);
 
         if (benchStartRet != 0) {
@@ -854,7 +856,7 @@ static int _benchMlDsaVerify(whClientContext* client, whBenchOpContext* ctx,
             break;
         }
         if (ret != 0) {
-            WH_BENCH_PRINTF("Failed to wc_MlDsaKey_Verify %d\n", ret);
+            WH_BENCH_PRINTF("Failed to wc_MlDsaKey_VerifyCtx %d\n", ret);
             break;
         }
         if (benchStopRet != 0) {
