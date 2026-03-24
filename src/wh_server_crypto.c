@@ -5388,6 +5388,7 @@ static int _HandleMlDsaSignDma(whServerContext* ctx, uint16_t magic, int devId,
     MlDsaKey key[1];
     void*    msgAddr = NULL;
     void*    sigAddr = NULL;
+    word32   sigLen   = 0;
 
     whMessageCrypto_MlDsaSignDmaRequest req;
     whMessageCrypto_MlDsaSignDmaResponse res;
@@ -5448,7 +5449,7 @@ static int _HandleMlDsaSignDma(whServerContext* ctx, uint16_t magic, int devId,
 
                 if (ret == 0) {
                     /* Sign the message using appropriate FIPS 204 API */
-                    word32 sigLen = req.sig.sz;
+                    sigLen = req.sig.sz;
                     if (preHashType != WC_HASH_TYPE_NONE) {
                         ret = wc_MlDsaKey_SignCtxHash(
                             key, req_context, (byte)contextSz,
@@ -5461,26 +5462,21 @@ static int _HandleMlDsaSignDma(whServerContext* ctx, uint16_t magic, int devId,
                             sigAddr, &sigLen, msgAddr, req.msg.sz,
                             ctx->crypto->rng);
                     }
+                }
 
-                    if (ret == 0) {
-                        /* Post-write processing of signature buffer */
-                        ret = wh_Server_DmaProcessClientAddress(
-                            ctx, (uintptr_t)req.sig.addr, &sigAddr, sigLen,
-                            WH_DMA_OPER_CLIENT_WRITE_POST,
-                            (whServerDmaFlags){0});
-
-                        if (ret == 0) {
-                            /* Set response signature length */
-                            res.sigLen = sigLen;
-                            *outSize   = sizeof(res);
-                        }
-
-                        /* Post-read processing of message buffer */
-                        ret = wh_Server_DmaProcessClientAddress(
-                            ctx, (uintptr_t)req.msg.addr, &msgAddr,
-                            req.msg.sz, WH_DMA_OPER_CLIENT_READ_POST,
-                            (whServerDmaFlags){0});
-                    }
+                if (sigAddr != NULL) {
+                    /* Post-write processing of signature buffer */
+                    (void)wh_Server_DmaProcessClientAddress(
+                        ctx, (uintptr_t)req.sig.addr, &sigAddr, sigLen,
+                        WH_DMA_OPER_CLIENT_WRITE_POST,
+                        (whServerDmaFlags){0});
+                }
+                if (msgAddr != NULL) {
+                    /* Post-read processing of message buffer */
+                    (void)wh_Server_DmaProcessClientAddress(
+                        ctx, (uintptr_t)req.msg.addr, &msgAddr,
+                        req.msg.sz, WH_DMA_OPER_CLIENT_READ_POST,
+                        (whServerDmaFlags){0});
                 }
             }
 
@@ -5495,12 +5491,13 @@ static int _HandleMlDsaSignDma(whServerContext* ctx, uint16_t magic, int devId,
     }
 
     if (ret == 0) {
+        /* Set response signature length */
+        res.sigLen = sigLen;
+        *outSize   = sizeof(res);
 
         /* Translate the response */
         (void)wh_MessageCrypto_TranslateMlDsaSignDmaResponse(
             magic, &res, (whMessageCrypto_MlDsaSignDmaResponse*)cryptoDataOut);
-
-        *outSize = sizeof(res);
     }
 
     return ret;
@@ -5597,26 +5594,21 @@ static int _HandleMlDsaVerifyDma(whServerContext* ctx, uint16_t magic,
                         key, sigAddr, req.sig.sz, req_context, (byte)contextSz,
                         msgAddr, req.msg.sz, &verified);
                 }
+            }
 
-                if (ret == 0) {
-                    /* Post-read processing of signature buffer */
-                    ret = wh_Server_DmaProcessClientAddress(
-                        ctx, (uintptr_t)req.sig.addr, &sigAddr, req.sig.sz,
-                        WH_DMA_OPER_CLIENT_READ_POST, (whServerDmaFlags){0});
+            if (sigAddr != NULL) {
+                /* Post-read processing of signature buffer */
+                (void)wh_Server_DmaProcessClientAddress(
+                    ctx, (uintptr_t)req.sig.addr, &sigAddr, req.sig.sz,
+                    WH_DMA_OPER_CLIENT_READ_POST, (whServerDmaFlags){0});
+            }
 
-                    if (ret == 0) {
-                        /* Post-read processing of message buffer */
-                        ret = wh_Server_DmaProcessClientAddress(
-                            ctx, (uintptr_t)req.msg.addr, &msgAddr,
-                            req.msg.sz, WH_DMA_OPER_CLIENT_READ_POST,
-                            (whServerDmaFlags){0});
-
-                        if (ret == 0) {
-                            /* Set verification result */
-                            res.verifyResult = verified;
-                        }
-                    }
-                }
+            if (msgAddr != NULL) {
+                /* Post-read processing of message buffer */
+                (void)wh_Server_DmaProcessClientAddress(
+                    ctx, (uintptr_t)req.msg.addr, &msgAddr,
+                    req.msg.sz, WH_DMA_OPER_CLIENT_READ_POST,
+                    (whServerDmaFlags){0});
             }
         }
 
@@ -5628,6 +5620,9 @@ static int _HandleMlDsaVerifyDma(whServerContext* ctx, uint16_t magic,
     }
 
     if (ret == 0) {
+        /* Set verification result */
+        res.verifyResult = verified;
+
         /* Translate the response */
         (void)wh_MessageCrypto_TranslateMlDsaVerifyDmaResponse(
             magic, &res,
