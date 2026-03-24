@@ -42,6 +42,11 @@
 #include <poll.h>
 
 
+/* Compile-time check: TLS recv functions pass PTTLS_PACKET_MAX_SIZE to
+ * wolfSSL_read, and callers provide WH_COMM_MTU-sized buffers. These must
+ * be equal to prevent buffer overflow. */
+typedef char pttls_size_check[(PTTLS_PACKET_MAX_SIZE == WH_COMM_MTU) ? 1 : -1];
+
 #ifndef WOLFHSM_CFG_NO_CRYPTO
 
 /* returns 1 (true) if the error passed in is a notice for non blocking
@@ -247,6 +252,7 @@ int posixTransportTls_SendRequest(void* context, uint16_t size,
 
                     /* Close the failed socket fd and set state for retry */
                     if (ctx->tcpCtx.connect_fd_p1 != 0) {
+                        close(ctx->tcpCtx.connect_fd_p1 - 1);
                         ctx->tcpCtx.connect_fd_p1 = 0;
                     }
                     ctx->connect_fd_p1 = 0;
@@ -397,6 +403,7 @@ int posixTransportTls_InitListen(void* context, const void* config,
     ctx->ssl_ctx = wolfSSL_CTX_new(wolfSSLv23_server_method());
 #endif
     if (!ctx->ssl_ctx) {
+        posixTransportTcp_CleanupListen(&ctx->tcpCtx);
         return WH_ERROR_ABORTED;
     }
 
@@ -408,6 +415,7 @@ int posixTransportTls_InitListen(void* context, const void* config,
     if (rc != WH_ERROR_OK) {
         wolfSSL_CTX_free(ctx->ssl_ctx);
         ctx->ssl_ctx = NULL;
+        posixTransportTcp_CleanupListen(&ctx->tcpCtx);
         return rc;
     }
 
@@ -479,12 +487,16 @@ int posixTransportTls_RecvRequest(void* context, uint16_t* out_size, void* data)
 
         /* Make accepted socket non-blocking */
         if (fcntl(ctx->accept_fd_p1 - 1, F_SETFL, O_NONBLOCK) != 0) {
+            close(ctx->accept_fd_p1 - 1);
+            ctx->accept_fd_p1 = 0;
             return WH_ERROR_ABORTED;
         }
 
         /* Create SSL object for this connection */
         ctx->ssl = wolfSSL_new(ctx->ssl_ctx);
         if (!ctx->ssl) {
+            close(ctx->accept_fd_p1 - 1);
+            ctx->accept_fd_p1 = 0;
             return WH_ERROR_ABORTED;
         }
 
@@ -493,6 +505,8 @@ int posixTransportTls_RecvRequest(void* context, uint16_t* out_size, void* data)
         if (rc != WOLFSSL_SUCCESS) {
             wolfSSL_free(ctx->ssl);
             ctx->ssl = NULL;
+            close(ctx->accept_fd_p1 - 1);
+            ctx->accept_fd_p1 = 0;
             return WH_ERROR_ABORTED;
         }
 
@@ -506,6 +520,8 @@ int posixTransportTls_RecvRequest(void* context, uint16_t* out_size, void* data)
             }
             wolfSSL_free(ctx->ssl);
             ctx->ssl = NULL;
+            close(ctx->accept_fd_p1 - 1);
+            ctx->accept_fd_p1 = 0;
             return WH_ERROR_ABORTED;
         }
 
