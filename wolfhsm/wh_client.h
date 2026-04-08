@@ -97,10 +97,30 @@ typedef struct {
     const whDmaAddrAllowList* dmaAddrAllowList; /* allowed addresses */
 } whClientDmaConfig;
 
+/* Per-operation async DMA context: stores translated input DMA address
+ * that must survive across the Request/Response boundary for POST cleanup.
+ * State is now passed inline (not via DMA), so only input tracking is needed.
+ * ioAddr:      translated DMA address for input POST
+ * clientAddr:  original client address for POST
+ * ioSz:        DMA'd size for POST */
+typedef struct {
+    uintptr_t ioAddr;
+    uintptr_t clientAddr;
+    uint64_t  ioSz;
+} whClientDmaAsyncSha;
+
+/* Async DMA context union. Only one DMA request can be in flight at a time
+ * per client context, so a single union suffices. Each Response function
+ * knows which member to access based on its own operation type. */
+typedef union {
+    whClientDmaAsyncSha sha;
+} whClientDmaAsyncCtx;
+
 typedef struct {
     whClientDmaClientMemCb    cb;
     const whDmaAddrAllowList* dmaAddrAllowList; /* allowed addresses */
     void* heap; /* heap hint for using static memory (or other allocator) */
+    whClientDmaAsyncCtx asyncCtx;
 } whClientDmaContext;
 #endif /* WOLFHSM_CFG_DMA */
 
