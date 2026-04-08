@@ -494,13 +494,15 @@ int wh_DemoClient_CryptoEcc(whClientContext* clientContext)
     WC_RNG     rng[1];
     byte       sharedOne[32];
     byte       sharedTwo[32];
-    const char plainMessage[16] = "message example";
-    byte       message[sizeof(plainMessage)];
+    /* Pre-computed SHA-256 digest of "message example" */
+    /* Canned SHA-256 digest to use for sign/verify demo */
+    byte message[32] = {
+        0x48, 0x0E, 0x66, 0x2E, 0x59, 0x0A, 0x79, 0x6E,
+        0xE5, 0x00, 0xE1, 0xA0, 0xB7, 0xE1, 0x2C, 0x4E,
+        0xD0, 0x39, 0x1D, 0x67, 0x56, 0x2F, 0x6E, 0xE0,
+        0x48, 0x9C, 0x00, 0xB9, 0xA9, 0x37, 0x21, 0x00
+    };
     byte       signature[128];
-
-    /* Set the message to the test string */
-    strncpy((char*)message, plainMessage, sizeof(message)-1);
-    message[sizeof(message)-1] = '\0';
 
     /* Initialize the rng to make the ecc keys */
     ret = wc_InitRng_ex(rng, NULL, WH_DEV_ID);
@@ -624,14 +626,16 @@ int wh_DemoClient_CryptoEccImport(whClientContext* clientContext)
     WC_RNG     rng[1];
     byte       sharedOne[32];
     byte       sharedTwo[32];
-    const char plainMessage[16] = "message example";
-    byte       message[sizeof(plainMessage)];
+    /* Pre-computed SHA-256 digest of "message example" */
+    /* Canned SHA-256 digest to use for sign/verify demo */
+    byte message[32] = {
+        0x48, 0x0E, 0x66, 0x2E, 0x59, 0x0A, 0x79, 0x6E,
+        0xE5, 0x00, 0xE1, 0xA0, 0xB7, 0xE1, 0x2C, 0x4E,
+        0xD0, 0x39, 0x1D, 0x67, 0x56, 0x2F, 0x6E, 0xE0,
+        0x48, 0x9C, 0x00, 0xB9, 0xA9, 0x37, 0x21, 0x00
+    };
     byte       signature[128];
     uint8_t    keyBuf[256];
-
-    /* Set the message to the test string */
-    strncpy((char*)message, plainMessage, sizeof(message)-1);
-    message[sizeof(message)-1] = '\0';
 
     /* Initialize the rng for signature signing */
     ret = wc_InitRng_ex(rng, NULL, WH_DEV_ID);

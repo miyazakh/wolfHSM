@@ -746,10 +746,10 @@ int wh_Server_HandleCertRequest(whServerContext* server, uint16_t magic,
                 (void)WH_SERVER_NVM_UNLOCK(server);
             } /* WH_SERVER_NVM_LOCK() */
 
-            /* Signature confirmation error is not an error for the server, so
+            /* Signature verification error is not an error for the server, so
              * propagate this error to the client in the response, otherwise
              * return the error code from the verify action */
-            if (rc == ASN_SIG_CONFIRM_E) {
+            if (rc == ASN_SIG_CONFIRM_E || rc == ASN_SIG_OID_E) {
                 resp.rc = WH_ERROR_CERT_VERIFY;
                 rc      = WH_ERROR_OK;
             }
@@ -794,10 +794,10 @@ int wh_Server_HandleCertRequest(whServerContext* server, uint16_t magic,
                     (void)WH_SERVER_NVM_UNLOCK(server);
                 } /* WH_SERVER_NVM_LOCK() */
 
-                /* Signature confirmation error is not an error for the server,
+                /* Signature verification error is not an error for the server,
                  * so propagate this error to the client in the response,
                  * otherwise return the error code from the verify action */
-                if (rc == ASN_SIG_CONFIRM_E) {
+                if (rc == ASN_SIG_CONFIRM_E || rc == ASN_SIG_OID_E) {
                     resp.rc = WH_ERROR_CERT_VERIFY;
                     rc      = WH_ERROR_OK;
                 }
