@@ -576,6 +576,227 @@ exit_boundary:
 }
 #endif /* WOLFHSM_CFG_TEST_POSIX && WOLFHSM_CFG_ENABLE_CLIENT && \
           WOLFHSM_CFG_ENABLE_SERVER */
+
+#if defined(WOLFHSM_CFG_TEST_POSIX) && \
+    defined(WOLFHSM_CFG_ENABLE_CLIENT) && \
+    defined(WOLFHSM_CFG_ENABLE_SERVER)
+/* Test that a key with WH_SHE_FLAG_WRITE_PROTECT cannot be overwritten
+ * via SHE LoadKey, and that ERC_WRITE_PROTECTED is returned */
+static int whTest_SheWriteProtect(whClientConfig* config)
+{
+    int             ret = 0;
+    WC_RNG          rng[1];
+    Cmac            cmac[1];
+    whClientContext  client[1] = {0};
+    uint8_t sheUid[] = {0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+                        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+                        0x01};
+    uint8_t secretKey[] = {0x2b, 0x7e, 0x15, 0x16, 0x28, 0xae, 0xd2,
+                           0xa6, 0xab, 0xf7, 0x15, 0x88, 0x09, 0xcf,
+                           0x4f, 0x3c};
+    uint8_t rawKey[] = {0x0f, 0x0e, 0x0d, 0x0c, 0x0b, 0x0a, 0x09,
+                        0x08, 0x07, 0x06, 0x05, 0x04, 0x03, 0x02,
+                        0x01, 0x00};
+    uint8_t zeros[WH_SHE_BOOT_MAC_PREFIX_LEN] = {0};
+    uint8_t bootMacKey[WH_SHE_KEY_SZ] = {0};
+    uint8_t bootloader[512];
+    uint8_t bootMacDigest[WH_SHE_KEY_SZ] = {0};
+    uint32_t digestSz = sizeof(bootMacDigest);
+    uint32_t bootloaderSz = sizeof(bootloader);
+    uint8_t messageOne[WH_SHE_M1_SZ];
+    uint8_t messageTwo[WH_SHE_M2_SZ];
+    uint8_t messageThree[WH_SHE_M3_SZ];
+    uint8_t messageFour[WH_SHE_M4_SZ];
+    uint8_t messageFive[WH_SHE_M5_SZ];
+    uint32_t outClientId = 0;
+    uint32_t outServerId = 0;
+    const uint32_t WP_TEST_KEY_ID = 4;
+
+    if (config == NULL) {
+        return WH_ERROR_BADARGS;
+    }
+
+    WH_TEST_RETURN_ON_FAIL(
+        wh_Client_Init(client, config));
+    WH_TEST_RETURN_ON_FAIL(
+        wh_Client_CommInit(client, &outClientId, &outServerId));
+
+    /* generate boot MAC key and fake bootloader */
+    if ((ret = wc_InitRng_ex(rng, NULL, WH_DEV_ID)) != 0) {
+        WH_ERROR_PRINT(
+            "Failed to wc_InitRng_ex %d\n", ret);
+        goto exit_wp;
+    }
+    if ((ret = wc_RNG_GenerateBlock(
+             rng, bootMacKey, sizeof(bootMacKey))) != 0) {
+        WH_ERROR_PRINT(
+            "Failed to wc_RNG_GenerateBlock %d\n", ret);
+        wc_FreeRng(rng);
+        goto exit_wp;
+    }
+    if ((ret = wc_RNG_GenerateBlock(
+             rng, bootloader, sizeof(bootloader))) != 0) {
+        WH_ERROR_PRINT(
+            "Failed to wc_RNG_GenerateBlock %d\n", ret);
+        wc_FreeRng(rng);
+        goto exit_wp;
+    }
+    wc_FreeRng(rng);
+
+    /* compute boot MAC digest: CMAC(0..0 | size | bootloader) */
+    if ((ret = wc_InitCmac(cmac, bootMacKey,
+             sizeof(bootMacKey), WC_CMAC_AES, NULL)) != 0) {
+        WH_ERROR_PRINT(
+            "Failed to wc_InitCmac %d\n", ret);
+        goto exit_wp;
+    }
+    if ((ret = wc_CmacUpdate(
+             cmac, zeros, sizeof(zeros))) != 0) {
+        WH_ERROR_PRINT(
+            "Failed to wc_CmacUpdate %d\n", ret);
+        goto exit_wp;
+    }
+    if ((ret = wc_CmacUpdate(cmac,
+             (uint8_t*)&bootloaderSz,
+             sizeof(bootloaderSz))) != 0) {
+        WH_ERROR_PRINT(
+            "Failed to wc_CmacUpdate %d\n", ret);
+        goto exit_wp;
+    }
+    if ((ret = wc_CmacUpdate(
+             cmac, bootloader, sizeof(bootloader))) != 0) {
+        WH_ERROR_PRINT(
+            "Failed to wc_CmacUpdate %d\n", ret);
+        goto exit_wp;
+    }
+    digestSz = AES_BLOCK_SIZE;
+    if ((ret = wc_CmacFinal(cmac, bootMacDigest,
+             (word32*)&digestSz)) != 0) {
+        WH_ERROR_PRINT(
+            "Failed to wc_CmacFinal %d\n", ret);
+        goto exit_wp;
+    }
+
+    /* pre-program boot MAC key and digest for secure boot */
+    if ((ret = wh_Client_ShePreProgramKey(
+             client, WH_SHE_BOOT_MAC_KEY_ID, 0,
+             bootMacKey, sizeof(bootMacKey))) != 0) {
+        WH_ERROR_PRINT(
+            "Failed to pre-program boot MAC key %d\n", ret);
+        goto exit_wp;
+    }
+    if ((ret = wh_Client_ShePreProgramKey(
+             client, WH_SHE_BOOT_MAC, 0,
+             bootMacDigest, sizeof(bootMacDigest))) != 0) {
+        WH_ERROR_PRINT(
+            "Failed to pre-program boot MAC digest %d\n",
+            ret);
+        goto exit_wp;
+    }
+
+    /* set the SHE UID */
+    if ((ret = wh_Client_SheSetUid(
+             client, sheUid, sizeof(sheUid))) != 0) {
+        WH_ERROR_PRINT(
+            "Failed to wh_Client_SheSetUid %d\n", ret);
+        goto exit_wp;
+    }
+
+    /* secure boot must succeed before SHE LoadKey is allowed */
+    if ((ret = wh_Client_SheSecureBoot(
+             client, bootloader, bootloaderSz)) != 0) {
+        WH_ERROR_PRINT(
+            "Failed to wh_Client_SheSecureBoot %d\n", ret);
+        goto exit_wp;
+    }
+
+    /* pre-program the secret key as auth key */
+    if ((ret = wh_Client_ShePreProgramKey(
+             client, WH_SHE_SECRET_KEY_ID, 0,
+             secretKey, sizeof(secretKey))) != 0) {
+        WH_ERROR_PRINT(
+            "Failed to pre-program secret key %d\n", ret);
+        goto exit_wp;
+    }
+
+    /* pre-program the target key WITH write protect flag */
+    if ((ret = wh_Client_ShePreProgramKey(
+             client, WP_TEST_KEY_ID,
+             WH_SHE_FLAG_WRITE_PROTECT,
+             rawKey, sizeof(rawKey))) != 0) {
+        WH_ERROR_PRINT(
+            "Failed to pre-program write-protected key %d\n",
+            ret);
+        goto exit_wp;
+    }
+
+    /* generate loadable key messages for the protected slot */
+    if ((ret = wh_She_GenerateLoadableKey(
+             WP_TEST_KEY_ID, WH_SHE_SECRET_KEY_ID,
+             1, 0, sheUid, rawKey, secretKey,
+             messageOne, messageTwo, messageThree,
+             messageFour, messageFive)) != 0) {
+        WH_ERROR_PRINT(
+            "Failed to generate loadable key %d\n", ret);
+        goto exit_wp;
+    }
+
+    /* attempt to load key into the write-protected slot */
+    ret = wh_Client_SheLoadKey(client, messageOne, messageTwo,
+                               messageThree, messageFour,
+                               messageFive);
+    if (ret != WH_SHE_ERC_WRITE_PROTECTED) {
+        WH_ERROR_PRINT(
+            "Expected WH_SHE_ERC_WRITE_PROTECTED, got %d\n",
+            ret);
+        ret = WH_ERROR_ABORTED;
+        goto exit_wp;
+    }
+
+    /* load succeeded (returned the expected error) */
+    ret = 0;
+    WH_TEST_PRINT("SHE write protect test SUCCESS\n");
+
+    /* destroy test keys to prevent NVM leaks */
+    if ((ret = _destroySheKey(
+             client, WH_SHE_BOOT_MAC_KEY_ID)) != 0) {
+        WH_ERROR_PRINT(
+            "Failed to _destroySheKey, ret=%d\n", ret);
+        goto exit_wp;
+    }
+    if ((ret = _destroySheKey(
+             client, WH_SHE_BOOT_MAC)) != 0) {
+        WH_ERROR_PRINT(
+            "Failed to _destroySheKey, ret=%d\n", ret);
+        goto exit_wp;
+    }
+    if ((ret = _destroySheKey(
+             client, WH_SHE_SECRET_KEY_ID)) != 0) {
+        WH_ERROR_PRINT(
+            "Failed to _destroySheKey, ret=%d\n", ret);
+        goto exit_wp;
+    }
+    if ((ret = _destroySheKey(client, WP_TEST_KEY_ID)) != 0) {
+        WH_ERROR_PRINT(
+            "Failed to _destroySheKey, ret=%d\n", ret);
+        goto exit_wp;
+    }
+
+exit_wp:
+    WH_TEST_RETURN_ON_FAIL(wh_Client_CommClose(client));
+
+    if (ret == 0) {
+        WH_TEST_RETURN_ON_FAIL(wh_Client_Cleanup(client));
+    }
+    else {
+        wh_Client_Cleanup(client);
+    }
+
+    return ret;
+}
+#endif /* WOLFHSM_CFG_TEST_POSIX && WOLFHSM_CFG_ENABLE_CLIENT && \
+          WOLFHSM_CFG_ENABLE_SERVER */
+
 #endif /* WOLFHSM_CFG_ENABLE_CLIENT */
 
 #ifdef WOLFHSM_CFG_ENABLE_SERVER
@@ -1341,6 +1562,9 @@ int whTest_She(void)
     WH_TEST_PRINT("Testing SHE: (pthread) mem boundary secure boot...\n");
     WH_TEST_RETURN_ON_FAIL(wh_ClientServer_MemThreadTest(
         whTest_SheClientConfigBoundarySecureBoot));
+    WH_TEST_PRINT("Testing SHE: (pthread) mem write protect...\n");
+    WH_TEST_RETURN_ON_FAIL(
+        wh_ClientServer_MemThreadTest(whTest_SheWriteProtect));
     return 0;
 }
 #endif
