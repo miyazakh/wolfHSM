@@ -351,18 +351,6 @@ static int _testDma(whServerContext* server, whClientContext* client)
     WH_TEST_ASSERT_RETURN(0 == memcmp(testMem.srvBufAllow, testMem.cliBuf,
                                       sizeof(testMem.srvBufAllow)));
 
-    /* Now try and copy from the denylisted addresses */
-    WH_TEST_ASSERT_RETURN(WH_ERROR_ACCESS ==
-                          whServerDma_CopyFromClient(server, testMem.srvBufDeny,
-                                                     (uintptr_t)testMem.cliBuf,
-                                                     sizeof(testMem.cliBuf),
-                                                     (whServerDmaFlags){0}));
-    WH_TEST_ASSERT_RETURN(
-        WH_ERROR_ACCESS ==
-        whServerDma_CopyToClient(server, (uintptr_t)testMem.cliBuf,
-                                 testMem.srvBufDeny, sizeof(testMem.srvBufDeny),
-                                 (whServerDmaFlags){0}));
-
     /* Check that zero-sized copies fail, even from allowed addresses */
     WH_TEST_ASSERT_RETURN(WH_ERROR_BADARGS == whServerDma_CopyFromClient(
                                                   server, testMem.srvBufAllow,
@@ -396,6 +384,21 @@ static int _testDma(whServerContext* server, whClientContext* client)
     WH_TEST_ASSERT_RETURN(0 == memcmp(testMem.srvBufAllow,
                                       testMem.srvRemapBufAllow,
                                       sizeof(testMem.srvBufAllow)));
+
+    /* Check that out-of-allowlist client addresses are rejected (done after
+     * clearing the custom DMA callback to avoid the callback remapping the
+     * deny address out of bounds) */
+    WH_TEST_ASSERT_RETURN(WH_ERROR_ACCESS == whServerDma_CopyFromClient(
+                                                  server, testMem.srvBufAllow,
+                                                  (uintptr_t)testMem.srvBufDeny,
+                                                  sizeof(testMem.srvBufAllow),
+                                                  (whServerDmaFlags){0}));
+    WH_TEST_ASSERT_RETURN(WH_ERROR_ACCESS ==
+                          whServerDma_CopyToClient(
+                              server, (uintptr_t)testMem.srvBufDeny,
+                              testMem.srvBufAllow,
+                              sizeof(testMem.srvBufAllow),
+                              (whServerDmaFlags){0}));
 
     return rc;
 }

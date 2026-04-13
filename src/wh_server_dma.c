@@ -131,15 +131,7 @@ int whServerDma_CopyFromClient(struct whServerContext_t* server,
         return WH_ERROR_BADARGS;
     }
 
-    /* Check the server address against the allow list */
-    rc = wh_Dma_CheckMemOperAgainstAllowList(server->dma.dmaAddrAllowList,
-                                             WH_DMA_OPER_CLIENT_READ_PRE,
-                                             serverPtr, len);
-    if (rc != WH_ERROR_OK) {
-        return rc;
-    }
-
-    /* Process the client address pre-read */
+    /* Process the client address pre-read (includes allow list check) */
     rc = wh_Server_DmaProcessClientAddress(
         server, clientAddr, &transformedAddr, len, WH_DMA_OPER_CLIENT_READ_PRE,
         flags);
@@ -185,15 +177,7 @@ int whServerDma_CopyToClient(struct whServerContext_t* server,
         return WH_ERROR_BADARGS;
     }
 
-    /* Check the server address against the allow list */
-    rc = wh_Dma_CheckMemOperAgainstAllowList(server->dma.dmaAddrAllowList,
-                                             WH_DMA_OPER_CLIENT_WRITE_PRE,
-                                             serverPtr, len);
-    if (rc != WH_ERROR_OK) {
-        return rc;
-    }
-
-    /* Process the client address pre-write */
+    /* Process the client address pre-write (includes allow list check) */
     rc = wh_Server_DmaProcessClientAddress(server, clientAddr, &transformedAddr,
                                            len, WH_DMA_OPER_CLIENT_WRITE_PRE,
                                            flags);

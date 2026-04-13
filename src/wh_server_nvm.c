@@ -349,6 +349,8 @@ int wh_Server_HandleNvmRequest(whServerContext* server,
         whMessageNvm_SimpleResponse resp = {0};
         void* metadata = NULL;
         void* data = NULL;
+        int metadata_dma_pre_ok = 0;
+        int data_dma_pre_ok = 0;
 
         if (req_size != sizeof(req)) {
             /* Request is malformed */
@@ -363,11 +365,17 @@ int wh_Server_HandleNvmRequest(whServerContext* server,
             resp.rc = wh_Server_DmaProcessClientAddress(
                 server, req.metadata_hostaddr, &metadata, sizeof(whNvmMetadata),
                 WH_DMA_OPER_CLIENT_READ_PRE, (whServerDmaFlags){0});
+            if (resp.rc == 0) {
+                metadata_dma_pre_ok = 1;
+            }
         }
         if (resp.rc == 0) {
             resp.rc = wh_Server_DmaProcessClientAddress(
                 server, req.data_hostaddr, &data, req.data_len,
                 WH_DMA_OPER_CLIENT_READ_PRE, (whServerDmaFlags){0});
+            if (resp.rc == 0) {
+                data_dma_pre_ok = 1;
+            }
         }
         if (resp.rc == 0) {
             rc = WH_SERVER_NVM_LOCK(server);
@@ -381,14 +389,15 @@ int wh_Server_HandleNvmRequest(whServerContext* server,
             } /* WH_SERVER_NVM_LOCK() */
             resp.rc = rc;
         }
-        if (resp.rc == 0) {
-            /* perform platform-specific host address processing */
-            resp.rc = wh_Server_DmaProcessClientAddress(
+        /* Always call POST for successful PREs, regardless of operation
+         * result */
+        if (metadata_dma_pre_ok) {
+            (void)wh_Server_DmaProcessClientAddress(
                 server, req.metadata_hostaddr, &metadata, sizeof(whNvmMetadata),
                 WH_DMA_OPER_CLIENT_READ_POST, (whServerDmaFlags){0});
         }
-        if (resp.rc == 0) {
-            resp.rc = wh_Server_DmaProcessClientAddress(
+        if (data_dma_pre_ok) {
+            (void)wh_Server_DmaProcessClientAddress(
                 server, req.data_hostaddr, &data, req.data_len,
                 WH_DMA_OPER_CLIENT_READ_POST, (whServerDmaFlags){0});
         }
@@ -405,6 +414,7 @@ int wh_Server_HandleNvmRequest(whServerContext* server,
         whNvmMetadata               meta = {0};
         whNvmSize                   read_len = 0;
         void*                       data = NULL;
+        int                         data_dma_pre_ok = 0;
 
         if (req_size != sizeof(req)) {
             /* Request is malformed */
@@ -441,15 +451,19 @@ int wh_Server_HandleNvmRequest(whServerContext* server,
                     rc = wh_Server_DmaProcessClientAddress(
                         server, req.data_hostaddr, &data, req.data_len,
                         WH_DMA_OPER_CLIENT_WRITE_PRE, (whServerDmaFlags){0});
+                    if (rc == 0) {
+                        data_dma_pre_ok = 1;
+                    }
                 }
                 if (rc == 0) {
                     /* Process the Read action */
                     rc = wh_Nvm_ReadChecked(server->nvm, req.id, req.offset,
                                             read_len, (uint8_t*)data);
                 }
-                if (rc == 0) {
-                    /* perform platform-specific host address processing */
-                    rc = wh_Server_DmaProcessClientAddress(
+                /* Always call POST for successful PRE, regardless of read
+                 * result */
+                if (data_dma_pre_ok) {
+                    (void)wh_Server_DmaProcessClientAddress(
                         server, req.data_hostaddr, &data, req.data_len,
                         WH_DMA_OPER_CLIENT_WRITE_POST, (whServerDmaFlags){0});
                 }
