@@ -332,6 +332,7 @@ coverage:
 	mkdir -p ../coverage && gcovr Build \
 		--root .. \
 		--gcov-executable gcov \
+		--gcov-ignore-parse-errors=negative_hits.warn_once_per_file \
 		--filter '\.\./src/.*' \
 		--filter '\.\./wolfhsm/.*' \
 		--html-details ../coverage/index.html \
