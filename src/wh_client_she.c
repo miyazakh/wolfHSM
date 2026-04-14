@@ -41,7 +41,6 @@
 
 /* Message definitions */
 #include "wolfhsm/wh_message.h"
-#include "wolfhsm/wh_message_comm.h"
 #include "wolfhsm/wh_message_she.h"
 
 #include "wolfhsm/wh_client.h"
@@ -604,7 +603,8 @@ int wh_Client_SheEncEcbRequest(whClientContext* c, uint8_t keyId, uint8_t* in,
     uint8_t*                    packIn;
     whMessageShe_EncEcbRequest* req = NULL;
 
-    if (c == NULL || in == NULL || sz < WH_SHE_KEY_SZ) {
+    if (c == NULL || in == NULL || sz < WH_SHE_KEY_SZ ||
+        sizeof(*req) + sz > WOLFHSM_CFG_COMM_DATA_LEN) {
         return WH_ERROR_BADARGS;
     }
 
@@ -673,7 +673,8 @@ int wh_Client_SheEncCbcRequest(whClientContext* c, uint8_t keyId, uint8_t* iv,
     whMessageShe_EncCbcRequest* req = NULL;
 
     if (c == NULL || in == NULL || sz < WH_SHE_KEY_SZ || iv == NULL ||
-        ivSz < WH_SHE_KEY_SZ) {
+        ivSz < WH_SHE_KEY_SZ ||
+        sizeof(*req) + sz > WOLFHSM_CFG_COMM_DATA_LEN) {
         return WH_ERROR_BADARGS;
     }
 
@@ -743,7 +744,8 @@ int wh_Client_SheDecEcbRequest(whClientContext* c, uint8_t keyId, uint8_t* in,
     uint8_t*                    packIn;
     whMessageShe_DecEcbRequest* req = NULL;
 
-    if (c == NULL || in == NULL || sz < WH_SHE_KEY_SZ) {
+    if (c == NULL || in == NULL || sz < WH_SHE_KEY_SZ ||
+        sizeof(*req) + sz > WOLFHSM_CFG_COMM_DATA_LEN) {
         return WH_ERROR_BADARGS;
     }
 
@@ -811,7 +813,8 @@ int wh_Client_SheDecCbcRequest(whClientContext* c, uint8_t keyId, uint8_t* iv,
     whMessageShe_DecCbcRequest* req = NULL;
 
     if (c == NULL || in == NULL || sz < WH_SHE_KEY_SZ || iv == NULL ||
-        ivSz < WH_SHE_KEY_SZ) {
+        ivSz < WH_SHE_KEY_SZ ||
+        sizeof(*req) + sz > WOLFHSM_CFG_COMM_DATA_LEN) {
         return WH_ERROR_BADARGS;
     }
 
@@ -881,7 +884,8 @@ int wh_Client_SheGenerateMacRequest(whClientContext* c, uint8_t keyId,
     uint8_t*                    packIn;
     whMessageShe_GenMacRequest* req = NULL;
 
-    if (c == NULL || in == NULL || sz < WH_SHE_KEY_SZ) {
+    if (c == NULL || in == NULL || sz < WH_SHE_KEY_SZ ||
+        sizeof(*req) + sz > WOLFHSM_CFG_COMM_DATA_LEN) {
         return WH_ERROR_BADARGS;
     }
 
@@ -948,7 +952,8 @@ int wh_Client_SheVerifyMacRequest(whClientContext* c, uint8_t keyId,
     whMessageShe_VerifyMacRequest* req = NULL;
 
     if (c == NULL || message == NULL || messageLen < WH_SHE_KEY_SZ ||
-        mac == NULL || macLen < WH_SHE_KEY_SZ) {
+        mac == NULL || macLen < WH_SHE_KEY_SZ ||
+        sizeof(*req) + messageLen + WH_SHE_KEY_SZ > WOLFHSM_CFG_COMM_DATA_LEN) {
         return WH_ERROR_BADARGS;
     }
 
