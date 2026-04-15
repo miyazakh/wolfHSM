@@ -4784,11 +4784,17 @@ static int _HandleSha256Dma(whServerContext* ctx, uint16_t magic, int devId,
             res.dmaAddrStatus.badAddr = req.state;
         }
         else {
-            /* Save the client devId to be restored later, when the context is
-             * copied back into client memory. */
-            clientDevId = sha256->devId;
-            /* overwrite the devId to that of the server for local crypto */
-            sha256->devId = devId;
+            /* Validate buffLen from untrusted context */
+            if (sha256->buffLen >= WC_SHA256_BLOCK_SIZE) {
+                ret = WH_ERROR_BADARGS;
+            }
+            else {
+                /* Save the client devId to be restored later, when the context
+                 * is copied back into client memory. */
+                clientDevId = sha256->devId;
+                /* overwrite the devId to that of the server for local crypto */
+                sha256->devId = devId;
+            }
         }
     }
 
@@ -4906,11 +4912,17 @@ static int _HandleSha224Dma(whServerContext* ctx, uint16_t magic, int devId,
             res.dmaAddrStatus.badAddr = req.state;
         }
         else {
-            /* Save the client devId to be restored later, when the context is
-             * copied back into client memory. */
-            clientDevId = sha224->devId;
-            /* overwrite the devId to that of the server for local crypto */
-            sha224->devId = devId;
+            /* Validate buffLen from untrusted context */
+            if (sha224->buffLen >= WC_SHA224_BLOCK_SIZE) {
+                ret = WH_ERROR_BADARGS;
+            }
+            else {
+                /* Save the client devId to be restored later, when the context
+                 * is copied back into client memory. */
+                clientDevId = sha224->devId;
+                /* overwrite the devId to that of the server for local crypto */
+                sha224->devId = devId;
+            }
         }
     }
 
@@ -5028,11 +5040,17 @@ static int _HandleSha384Dma(whServerContext* ctx, uint16_t magic, int devId,
             res.dmaAddrStatus.badAddr = req.state;
         }
         else {
-            /* Save the client devId to be restored later, when the context is
-             * copied back into client memory. */
-            clientDevId = sha384->devId;
-            /* overwrite the devId to that of the server for local crypto */
-            sha384->devId = devId;
+            /* Validate buffLen from untrusted context */
+            if (sha384->buffLen >= WC_SHA384_BLOCK_SIZE) {
+                ret = WH_ERROR_BADARGS;
+            }
+            else {
+                /* Save the client devId to be restored later, when the context
+                 * is copied back into client memory. */
+                clientDevId = sha384->devId;
+                /* overwrite the devId to that of the server for local crypto */
+                sha384->devId = devId;
+            }
         }
     }
 
@@ -5150,13 +5168,25 @@ static int _HandleSha512Dma(whServerContext* ctx, uint16_t magic, int devId,
             res.dmaAddrStatus.badAddr = req.state;
         }
         else {
-            /* Save the client devId to be restored later, when the context is
-             * copied back into client memory. */
-            clientDevId = sha512->devId;
-            /* overwrite the devId to that of the server for local crypto */
-            sha512->devId = devId;
-            /* retrieve hash Type to handle 512, 512-224, or 512-256 */
-            hashType = sha512->hashType;
+            /* Validate buffLen from untrusted context */
+            if (sha512->buffLen >= WC_SHA512_BLOCK_SIZE) {
+                ret = WH_ERROR_BADARGS;
+            }
+            else {
+                /* Save the client devId to be restored later, when the context
+                 * is copied back into client memory. */
+                clientDevId = sha512->devId;
+                /* overwrite the devId to that of the server for local crypto */
+                sha512->devId = devId;
+                /* retrieve hash Type to handle 512, 512-224, or 512-256 */
+                hashType = sha512->hashType;
+                /* Validate hashType from untrusted context */
+                if (hashType != WC_HASH_TYPE_SHA512 &&
+                    hashType != WC_HASH_TYPE_SHA512_224 &&
+                    hashType != WC_HASH_TYPE_SHA512_256) {
+                    ret = WH_ERROR_BADARGS;
+                }
+            }
         }
     }
 

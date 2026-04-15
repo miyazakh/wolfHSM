@@ -556,9 +556,10 @@ int wh_Server_HandleCertRequest(whServerContext* server, uint16_t magic,
 
 #ifdef WOLFHSM_CFG_DMA
         case WH_MESSAGE_CERT_ACTION_ADDTRUSTED_DMA: {
-            whMessageCert_AddTrustedDmaRequest req       = {0};
-            whMessageCert_SimpleResponse       resp      = {0};
-            void*                              cert_data = NULL;
+            whMessageCert_AddTrustedDmaRequest req              = {0};
+            whMessageCert_SimpleResponse       resp             = {0};
+            void*                              cert_data        = NULL;
+            int                                cert_dma_pre_ok  = 0;
 
             if (req_size != sizeof(req)) {
                 /* Request is malformed */
@@ -574,6 +575,9 @@ int wh_Server_HandleCertRequest(whServerContext* server, uint16_t magic,
                 resp.rc = wh_Server_DmaProcessClientAddress(
                     server, req.cert_addr, &cert_data, req.cert_len,
                     WH_DMA_OPER_CLIENT_READ_PRE, (whServerDmaFlags){0});
+                if (resp.rc == WH_ERROR_OK) {
+                    cert_dma_pre_ok = 1;
+                }
             }
             if (resp.rc == WH_ERROR_OK) {
                 /* Process the add trusted action */
@@ -586,9 +590,10 @@ int wh_Server_HandleCertRequest(whServerContext* server, uint16_t magic,
                     (void)WH_SERVER_NVM_UNLOCK(server);
                 } /* WH_SERVER_NVM_LOCK() */
             }
-            if (resp.rc == WH_ERROR_OK) {
-                /* Post-process client address */
-                resp.rc = wh_Server_DmaProcessClientAddress(
+            /* Always call POST for successful PRE, regardless of operation
+             * result */
+            if (cert_dma_pre_ok) {
+                (void)wh_Server_DmaProcessClientAddress(
                     server, req.cert_addr, &cert_data, req.cert_len,
                     WH_DMA_OPER_CLIENT_READ_POST, (whServerDmaFlags){0});
             }
@@ -600,11 +605,12 @@ int wh_Server_HandleCertRequest(whServerContext* server, uint16_t magic,
         }; break;
 
         case WH_MESSAGE_CERT_ACTION_READTRUSTED_DMA: {
-            whMessageCert_ReadTrustedDmaRequest req       = {0};
-            whMessageCert_SimpleResponse        resp      = {0};
-            void*                               cert_data = NULL;
+            whMessageCert_ReadTrustedDmaRequest req              = {0};
+            whMessageCert_SimpleResponse        resp             = {0};
+            void*                               cert_data        = NULL;
             uint32_t                            cert_len;
             whNvmMetadata                       meta;
+            int                                 cert_dma_pre_ok  = 0;
 
             if (req_size != sizeof(req)) {
                 /* Request is malformed */
@@ -620,6 +626,9 @@ int wh_Server_HandleCertRequest(whServerContext* server, uint16_t magic,
                 resp.rc = wh_Server_DmaProcessClientAddress(
                     server, req.cert_addr, &cert_data, req.cert_len,
                     WH_DMA_OPER_CLIENT_WRITE_PRE, (whServerDmaFlags){0});
+                if (resp.rc == WH_ERROR_OK) {
+                    cert_dma_pre_ok = 1;
+                }
             }
             if (resp.rc == WH_ERROR_OK) {
                 /* Check metadata to see if the certificate is non-exportable */
@@ -641,10 +650,11 @@ int wh_Server_HandleCertRequest(whServerContext* server, uint16_t magic,
                     (void)WH_SERVER_NVM_UNLOCK(server);
                 } /* WH_SERVER_NVM_LOCK() */
             }
-            if (resp.rc == WH_ERROR_OK) {
-                /* Post-process client address */
-                resp.rc = wh_Server_DmaProcessClientAddress(
-                    server, req.cert_addr, &cert_data, cert_len,
+            /* Always call POST for successful PRE, regardless of operation
+             * result */
+            if (cert_dma_pre_ok) {
+                (void)wh_Server_DmaProcessClientAddress(
+                    server, req.cert_addr, &cert_data, req.cert_len,
                     WH_DMA_OPER_CLIENT_WRITE_POST, (whServerDmaFlags){0});
             }
 
@@ -655,10 +665,11 @@ int wh_Server_HandleCertRequest(whServerContext* server, uint16_t magic,
         }; break;
 
         case WH_MESSAGE_CERT_ACTION_VERIFY_DMA: {
-            whMessageCert_VerifyDmaRequest  req       = {0};
-            whMessageCert_VerifyDmaResponse resp      = {0};
-            void*                           cert_data = NULL;
-            whKeyId                         keyId     = WH_KEYID_ERASED;
+            whMessageCert_VerifyDmaRequest  req              = {0};
+            whMessageCert_VerifyDmaResponse resp             = {0};
+            void*                           cert_data        = NULL;
+            whKeyId                         keyId            = WH_KEYID_ERASED;
+            int                             cert_dma_pre_ok  = 0;
 
             if (req_size != sizeof(req)) {
                 /* Request is malformed */
@@ -677,6 +688,9 @@ int wh_Server_HandleCertRequest(whServerContext* server, uint16_t magic,
                 resp.rc = wh_Server_DmaProcessClientAddress(
                     server, req.cert_addr, &cert_data, req.cert_len,
                     WH_DMA_OPER_CLIENT_READ_PRE, (whServerDmaFlags){0});
+                if (resp.rc == WH_ERROR_OK) {
+                    cert_dma_pre_ok = 1;
+                }
             }
             if (resp.rc == WH_ERROR_OK) {
                 resp.rc = WH_SERVER_NVM_LOCK(server);
@@ -693,9 +707,10 @@ int wh_Server_HandleCertRequest(whServerContext* server, uint16_t magic,
                     (void)WH_SERVER_NVM_UNLOCK(server);
                 } /* WH_SERVER_NVM_LOCK() */
             }
-            if (resp.rc == WH_ERROR_OK) {
-                /* Post-process client address */
-                resp.rc = wh_Server_DmaProcessClientAddress(
+            /* Always call POST for successful PRE, regardless of operation
+             * result */
+            if (cert_dma_pre_ok) {
+                (void)wh_Server_DmaProcessClientAddress(
                     server, req.cert_addr, &cert_data, req.cert_len,
                     WH_DMA_OPER_CLIENT_READ_POST, (whServerDmaFlags){0});
             }
@@ -766,9 +781,10 @@ int wh_Server_HandleCertRequest(whServerContext* server, uint16_t magic,
 #if defined(WOLFHSM_CFG_DMA)
         case WH_MESSAGE_CERT_ACTION_VERIFY_ACERT_DMA: {
             /* Acert verify request uses standard cert verify request struct */
-            whMessageCert_VerifyDmaRequest req       = {0};
-            whMessageCert_SimpleResponse   resp      = {0};
-            void*                          cert_data = NULL;
+            whMessageCert_VerifyDmaRequest req              = {0};
+            whMessageCert_SimpleResponse   resp             = {0};
+            void*                          cert_data        = NULL;
+            int                            cert_dma_pre_ok  = 0;
 
             if (req_size != sizeof(req)) {
                 /* Request is malformed */
@@ -783,6 +799,9 @@ int wh_Server_HandleCertRequest(whServerContext* server, uint16_t magic,
                 rc = wh_Server_DmaProcessClientAddress(
                     server, req.cert_addr, &cert_data, req.cert_len,
                     WH_DMA_OPER_CLIENT_READ_PRE, (whServerDmaFlags){0});
+                if (rc == WH_ERROR_OK) {
+                    cert_dma_pre_ok = 1;
+                }
             }
             if (rc == WH_ERROR_OK) {
                 /* Process the verify action */
@@ -805,9 +824,10 @@ int wh_Server_HandleCertRequest(whServerContext* server, uint16_t magic,
                     resp.rc = rc;
                 }
             }
-            if (rc == WH_ERROR_OK) {
-                /* Post-process client address */
-                rc = wh_Server_DmaProcessClientAddress(
+            /* Always call POST for successful PRE, regardless of operation
+             * result */
+            if (cert_dma_pre_ok) {
+                (void)wh_Server_DmaProcessClientAddress(
                     server, req.cert_addr, &cert_data, req.cert_len,
                     WH_DMA_OPER_CLIENT_READ_POST, (whServerDmaFlags){0});
             }
