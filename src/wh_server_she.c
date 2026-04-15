@@ -422,6 +422,9 @@ static int _SecureBootFinish(whServerContext* server, uint16_t magic,
                                                           resp_packet);
     *out_resp_size = sizeof(resp);
 
+    ForceZero(cmacOutput, sizeof(cmacOutput));
+    ForceZero(macDigest, sizeof(macDigest));
+
     return ret;
 }
 
@@ -693,6 +696,11 @@ static int _LoadKey(whServerContext* server, uint16_t magic, uint16_t req_size,
     resp.rc        = _TranslateSheReturnCode(ret);
     (void)wh_MessageShe_TranslateLoadKeyResponse(magic, &resp, resp_packet);
 
+    ForceZero(kdfInput, sizeof(kdfInput));
+    ForceZero(cmacOutput, sizeof(cmacOutput));
+    ForceZero(tmpKey, sizeof(tmpKey));
+    ForceZero(counter_buffer, sizeof(counter_buffer));
+
     return ret;
 }
 
@@ -895,6 +903,10 @@ static int _ExportRamKey(whServerContext* server, uint16_t magic,
                                                       resp_packet);
     *out_resp_size = sizeof(resp);
 
+    ForceZero(kdfInput, sizeof(kdfInput));
+    ForceZero(cmacOutput, sizeof(cmacOutput));
+    ForceZero(tmpKey, sizeof(tmpKey));
+
     return ret;
 }
 
@@ -997,6 +1009,10 @@ static int _InitRnd(whServerContext* server, uint16_t magic, uint16_t req_size,
     resp.rc     = _TranslateSheReturnCode(ret);
     (void)wh_MessageShe_TranslateInitRngResponse(magic, &resp, resp_packet);
     *out_resp_size = sizeof(resp);
+
+    ForceZero(kdfInput, sizeof(kdfInput));
+    ForceZero(cmacOutput, sizeof(cmacOutput));
+    ForceZero(tmpKey, sizeof(tmpKey));
 
     return ret;
 }
@@ -1116,6 +1132,8 @@ static int _ExtendSeed(whServerContext* server, uint16_t magic,
     (void)wh_MessageShe_TranslateExtendSeedResponse(magic, &resp, resp_packet);
     *out_resp_size = sizeof(resp);
 
+    ForceZero(kdfInput, sizeof(kdfInput));
+
     return ret;
 }
 
@@ -1189,6 +1207,9 @@ static int _EncEcb(whServerContext* server, uint16_t magic, uint16_t req_size,
     }
     resp.rc = _TranslateSheReturnCode(ret);
     (void)wh_MessageShe_TranslateEncEcbResponse(magic, &resp, resp_packet);
+
+    ForceZero(tmpKey, sizeof(tmpKey));
+
     return ret;
 }
 
@@ -1269,6 +1290,8 @@ static int _EncCbc(whServerContext* server, uint16_t magic, uint16_t req_size,
 
     resp.rc = _TranslateSheReturnCode(ret);
     (void)wh_MessageShe_TranslateEncCbcResponse(magic, &resp, resp_packet);
+
+    ForceZero(tmpKey, sizeof(tmpKey));
 
     return ret;
 }
@@ -1351,6 +1374,8 @@ static int _DecEcb(whServerContext* server, uint16_t magic, uint16_t req_size,
     resp.rc = _TranslateSheReturnCode(ret);
     (void)wh_MessageShe_TranslateDecEcbResponse(magic, &resp, resp_packet);
 
+    ForceZero(tmpKey, sizeof(tmpKey));
+
     return ret;
 }
 
@@ -1432,6 +1457,8 @@ static int _DecCbc(whServerContext* server, uint16_t magic, uint16_t req_size,
     resp.rc = _TranslateSheReturnCode(ret);
     (void)wh_MessageShe_TranslateDecCbcResponse(magic, &resp, resp_packet);
 
+    ForceZero(tmpKey, sizeof(tmpKey));
+
     return ret;
 }
 
@@ -1486,6 +1513,8 @@ static int _GenerateMac(whServerContext* server, uint16_t magic,
     resp.rc = _TranslateSheReturnCode(ret);
     (void)wh_MessageShe_TranslateGenMacResponse(magic, &resp, resp_packet);
     *out_resp_size = sizeof(resp);
+
+    ForceZero(tmpKey, sizeof(tmpKey));
 
     return ret;
 }
@@ -1559,6 +1588,8 @@ static int _VerifyMac(whServerContext* server, uint16_t magic,
     resp.rc = _TranslateSheReturnCode(ret);
     (void)wh_MessageShe_TranslateVerifyMacResponse(magic, &resp, resp_packet);
     *out_resp_size = sizeof(resp);
+
+    ForceZero(tmpKey, sizeof(tmpKey));
 
     return ret;
 }
