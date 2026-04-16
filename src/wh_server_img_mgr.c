@@ -232,14 +232,13 @@ int wh_Server_ImgMgrVerifyMethodEccWithSha256(whServerImgMgrContext*   context,
     int     verifyResult = 0;
     word32  inOutIdx     = 0;
 
-    (void)context; /* Unused parameter */
-
-    if (img == NULL || key == NULL || sig == NULL || keySz == 0 || sigSz == 0) {
+    if (context == NULL || context->server == NULL || img == NULL ||
+        key == NULL || sig == NULL || keySz == 0 || sigSz == 0) {
         return WH_ERROR_BADARGS;
     }
 
     /* Initialize ECC key */
-    ret = wc_ecc_init(&eccKey);
+    ret = wc_ecc_init_ex(&eccKey, NULL, context->server->devId);
     if (ret != 0) {
         return WH_ERROR_ABORTED;
     }
@@ -315,9 +314,8 @@ int wh_Server_ImgMgrVerifyMethodAesCmac(whServerImgMgrContext*   context,
     int     ret = WH_ERROR_OK;
     Cmac    cmac;
 
-    (void)context; /* Unused parameter */
-
-    if (img == NULL || key == NULL || sig == NULL) {
+    if (context == NULL || context->server == NULL || img == NULL ||
+        key == NULL || sig == NULL) {
         return WH_ERROR_BADARGS;
     }
 
@@ -382,14 +380,13 @@ int wh_Server_ImgMgrVerifyMethodRsaSslWithSha256(
     word32  decryptedLen = sizeof(decrypted);
     word32  inOutIdx     = 0;
 
-    (void)context; /* Unused parameter */
-
-    if (img == NULL || key == NULL || sig == NULL || keySz == 0 || sigSz == 0) {
+    if (context == NULL || context->server == NULL || img == NULL ||
+        key == NULL || sig == NULL || keySz == 0 || sigSz == 0) {
         return WH_ERROR_BADARGS;
     }
 
     /* Initialize RSA key */
-    ret = wc_InitRsaKey(&rsaKey, NULL);
+    ret = wc_InitRsaKey_ex(&rsaKey, NULL, context->server->devId);
     if (ret != 0) {
         return WH_ERROR_ABORTED;
     }
