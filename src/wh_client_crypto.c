@@ -4328,6 +4328,10 @@ int wh_Client_Sha256UpdateRequest(whClientContext* ctx, wc_Sha256* sha,
     }
     *requestSent = false;
 
+    if (sha->buffLen >= WC_SHA256_BLOCK_SIZE) {
+        return WH_ERROR_BADARGS;
+    }
+
     capacity = _Sha256UpdatePerCallCapacity(sha);
     if (inLen > capacity) {
         return WH_ERROR_BADARGS;
@@ -4454,6 +4458,9 @@ int wh_Client_Sha256FinalRequest(whClientContext* ctx, wc_Sha256* sha)
     uint8_t*                       dataPtr;
 
     if (ctx == NULL || sha == NULL) {
+        return WH_ERROR_BADARGS;
+    }
+    if (sha->buffLen >= WC_SHA256_BLOCK_SIZE) {
         return WH_ERROR_BADARGS;
     }
 
@@ -4587,6 +4594,10 @@ int wh_Client_Sha256DmaUpdateRequest(whClientContext* ctx, wc_Sha256* sha,
         return WH_ERROR_BADARGS;
     }
     *requestSent = false;
+
+    if (sha->buffLen >= WC_SHA256_BLOCK_SIZE) {
+        return WH_ERROR_BADARGS;
+    }
 
     if (inLen == 0) {
         return WH_ERROR_OK;
@@ -4741,6 +4752,9 @@ int wh_Client_Sha256DmaFinalRequest(whClientContext* ctx, wc_Sha256* sha)
     if (ctx == NULL || sha == NULL) {
         return WH_ERROR_BADARGS;
     }
+    if (sha->buffLen >= WC_SHA256_BLOCK_SIZE) {
+        return WH_ERROR_BADARGS;
+    }
 
     dataPtr = (uint8_t*)wh_CommClient_GetDataPtr(ctx->comm);
     if (dataPtr == NULL) {
@@ -4869,6 +4883,10 @@ int wh_Client_Sha224UpdateRequest(whClientContext* ctx, wc_Sha224* sha,
         return WH_ERROR_BADARGS;
     }
     *requestSent = false;
+
+    if (sha->buffLen >= WC_SHA224_BLOCK_SIZE) {
+        return WH_ERROR_BADARGS;
+    }
 
     capacity = _Sha224UpdatePerCallCapacity(sha);
     if (inLen > capacity) {
@@ -4999,6 +5017,9 @@ int wh_Client_Sha224FinalRequest(whClientContext* ctx, wc_Sha224* sha)
     uint8_t*                       dataPtr;
 
     if (ctx == NULL || sha == NULL) {
+        return WH_ERROR_BADARGS;
+    }
+    if (sha->buffLen >= WC_SHA224_BLOCK_SIZE) {
         return WH_ERROR_BADARGS;
     }
 
@@ -5132,6 +5153,10 @@ int wh_Client_Sha224DmaUpdateRequest(whClientContext* ctx, wc_Sha224* sha,
         return WH_ERROR_BADARGS;
     }
     *requestSent = false;
+
+    if (sha->buffLen >= WC_SHA224_BLOCK_SIZE) {
+        return WH_ERROR_BADARGS;
+    }
 
     if (inLen == 0) {
         return WH_ERROR_OK;
@@ -5273,6 +5298,9 @@ int wh_Client_Sha224DmaFinalRequest(whClientContext* ctx, wc_Sha224* sha)
     if (ctx == NULL || sha == NULL) {
         return WH_ERROR_BADARGS;
     }
+    if (sha->buffLen >= WC_SHA224_BLOCK_SIZE) {
+        return WH_ERROR_BADARGS;
+    }
 
     dataPtr = (uint8_t*)wh_CommClient_GetDataPtr(ctx->comm);
     if (dataPtr == NULL) {
@@ -5397,6 +5425,10 @@ int wh_Client_Sha384UpdateRequest(whClientContext* ctx, wc_Sha384* sha,
         return WH_ERROR_BADARGS;
     }
     *requestSent = false;
+
+    if (sha->buffLen >= WC_SHA384_BLOCK_SIZE) {
+        return WH_ERROR_BADARGS;
+    }
 
     capacity = _Sha384UpdatePerCallCapacity(sha);
     if (inLen > capacity) {
@@ -5528,6 +5560,9 @@ int wh_Client_Sha384FinalRequest(whClientContext* ctx, wc_Sha384* sha)
     uint8_t*                       dataPtr;
 
     if (ctx == NULL || sha == NULL) {
+        return WH_ERROR_BADARGS;
+    }
+    if (sha->buffLen >= WC_SHA384_BLOCK_SIZE) {
         return WH_ERROR_BADARGS;
     }
 
@@ -5662,6 +5697,10 @@ int wh_Client_Sha384DmaUpdateRequest(whClientContext* ctx, wc_Sha384* sha,
         return WH_ERROR_BADARGS;
     }
     *requestSent = false;
+
+    if (sha->buffLen >= WC_SHA384_BLOCK_SIZE) {
+        return WH_ERROR_BADARGS;
+    }
 
     if (inLen == 0) {
         return WH_ERROR_OK;
@@ -5804,6 +5843,9 @@ int wh_Client_Sha384DmaFinalRequest(whClientContext* ctx, wc_Sha384* sha)
     if (ctx == NULL || sha == NULL) {
         return WH_ERROR_BADARGS;
     }
+    if (sha->buffLen >= WC_SHA384_BLOCK_SIZE) {
+        return WH_ERROR_BADARGS;
+    }
 
     dataPtr = (uint8_t*)wh_CommClient_GetDataPtr(ctx->comm);
     if (dataPtr == NULL) {
@@ -5930,6 +5972,10 @@ int wh_Client_Sha512UpdateRequest(whClientContext* ctx, wc_Sha512* sha,
         return WH_ERROR_BADARGS;
     }
     *requestSent = false;
+
+    if (sha->buffLen >= WC_SHA512_BLOCK_SIZE) {
+        return WH_ERROR_BADARGS;
+    }
 
     capacity = _Sha512UpdatePerCallCapacity(sha);
     if (inLen > capacity) {
@@ -6058,6 +6104,9 @@ int wh_Client_Sha512FinalRequest(whClientContext* ctx, wc_Sha512* sha)
     uint8_t*                       dataPtr;
 
     if (ctx == NULL || sha == NULL) {
+        return WH_ERROR_BADARGS;
+    }
+    if (sha->buffLen >= WC_SHA512_BLOCK_SIZE) {
         return WH_ERROR_BADARGS;
     }
 
@@ -6212,6 +6261,10 @@ int wh_Client_Sha512DmaUpdateRequest(whClientContext* ctx, wc_Sha512* sha,
     }
     *requestSent = false;
 
+    if (sha->buffLen >= WC_SHA512_BLOCK_SIZE) {
+        return WH_ERROR_BADARGS;
+    }
+
     if (inLen == 0) {
         return WH_ERROR_OK;
     }
@@ -6350,6 +6403,9 @@ int wh_Client_Sha512DmaFinalRequest(whClientContext* ctx, wc_Sha512* sha)
     uint8_t*                          inlineData;
 
     if (ctx == NULL || sha == NULL) {
+        return WH_ERROR_BADARGS;
+    }
+    if (sha->buffLen >= WC_SHA512_BLOCK_SIZE) {
         return WH_ERROR_BADARGS;
     }
 
