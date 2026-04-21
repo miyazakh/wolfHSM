@@ -3677,6 +3677,8 @@ static int _HandleSha256(whServerContext* ctx, uint16_t magic, int devId,
 
     (void)ctx;
 
+    res.hashType = WC_HASH_TYPE_SHA256;
+
     /* Validate minimum size */
     if (inSize < sizeof(whMessageCrypto_Sha256Request)) {
         return WH_ERROR_BADARGS;
@@ -3767,6 +3769,8 @@ static int _HandleSha224(whServerContext* ctx, uint16_t magic, int devId,
 
     (void)ctx;
 
+    res.hashType = WC_HASH_TYPE_SHA224;
+
     /* Validate minimum size */
     if (inSize < sizeof(whMessageCrypto_Sha256Request)) {
         return WH_ERROR_BADARGS;
@@ -3855,6 +3859,8 @@ static int _HandleSha384(whServerContext* ctx, uint16_t magic, int devId,
     const uint8_t*                inData;
 
     (void)ctx;
+
+    res.hashType = WC_HASH_TYPE_SHA384;
 
     /* Validate minimum size */
     if (inSize < sizeof(whMessageCrypto_Sha512Request)) {
@@ -3978,7 +3984,10 @@ static int _HandleSha512(whServerContext* ctx, uint16_t magic, int devId,
     inData =
         (const uint8_t*)cryptoDataIn + sizeof(whMessageCrypto_Sha512Request);
 
-    /* init sha2 struct with devid */
+    /* init sha2 struct with devid. If the client requested a variant the
+     * server does not have compiled in, we normalize hashType to plain SHA512
+     * so the response reflects what was actually executed; the client detects
+     * the mismatch against its own hashType and returns an error. */
     hashType = req.resumeState.hashType;
     switch (hashType) {
 #ifndef WOLFSSL_NOSHA512_224
@@ -3992,12 +4001,15 @@ static int _HandleSha512(whServerContext* ctx, uint16_t magic, int devId,
             break;
 #endif
         default:
-            ret = wc_InitSha512_ex(sha512, NULL, devId);
+            ret      = wc_InitSha512_ex(sha512, NULL, devId);
+            hashType = WC_HASH_TYPE_SHA512;
             break;
     }
     if (ret != 0) {
         return ret;
     }
+
+    res.hashType = hashType;
 
     /* Restore intermediate state from client; server is stateless otherwise.
      * The partial-block buffer lives only on the client. */
@@ -4828,6 +4840,8 @@ static int _HandleSha256Dma(whServerContext* ctx, uint16_t magic, int devId,
     const uint8_t*                   inlineData;
     void*                            inAddr = NULL;
 
+    res.hashType = WC_HASH_TYPE_SHA256;
+
     if (inSize < sizeof(whMessageCrypto_Sha256DmaRequest)) {
         return WH_ERROR_BADARGS;
     }
@@ -4933,6 +4947,8 @@ static int _HandleSha224Dma(whServerContext* ctx, uint16_t magic, int devId,
     const uint8_t*                   inlineData;
     void*                            inAddr = NULL;
 
+    res.hashType = WC_HASH_TYPE_SHA224;
+
     if (inSize < sizeof(whMessageCrypto_Sha256DmaRequest)) {
         return WH_ERROR_BADARGS;
     }
@@ -5034,6 +5050,8 @@ static int _HandleSha384Dma(whServerContext* ctx, uint16_t magic, int devId,
     wc_Sha384                        sha384[1];
     const uint8_t*                   inlineData;
     void*                            inAddr = NULL;
+
+    res.hashType = WC_HASH_TYPE_SHA384;
 
     if (inSize < sizeof(whMessageCrypto_Sha512DmaRequest)) {
         return WH_ERROR_BADARGS;
@@ -5167,6 +5185,10 @@ static int _HandleSha512Dma(whServerContext* ctx, uint16_t magic, int devId,
         (const uint8_t*)cryptoDataIn + sizeof(whMessageCrypto_Sha512DmaRequest);
     hashType = req.resumeState.hashType;
 
+    /* If the client requested a variant the server does not have compiled in,
+     * normalize hashType to plain SHA512 so the response reflects what was
+     * actually executed; the client detects the mismatch against its own
+     * hashType and returns an error. */
     switch (hashType) {
 #ifndef WOLFSSL_NOSHA512_224
         case WC_HASH_TYPE_SHA512_224:
@@ -5179,12 +5201,15 @@ static int _HandleSha512Dma(whServerContext* ctx, uint16_t magic, int devId,
             break;
 #endif
         default:
-            ret = wc_InitSha512_ex(sha512, NULL, devId);
+            ret      = wc_InitSha512_ex(sha512, NULL, devId);
+            hashType = WC_HASH_TYPE_SHA512;
             break;
     }
     if (ret != 0) {
         return ret;
     }
+
+    res.hashType = hashType;
 
     memcpy(sha512->digest, req.resumeState.hash, WC_SHA512_DIGEST_SIZE);
     sha512->loLen    = req.resumeState.loLen;
@@ -5240,9 +5265,8 @@ static int _HandleSha512Dma(whServerContext* ctx, uint16_t magic, int devId,
             }
             else {
                 memcpy(res.hash, sha512->digest, WC_SHA512_DIGEST_SIZE);
-                res.loLen    = sha512->loLen;
-                res.hiLen    = sha512->hiLen;
-                res.hashType = sha512->hashType;
+                res.loLen = sha512->loLen;
+                res.hiLen = sha512->hiLen;
             }
         }
     }

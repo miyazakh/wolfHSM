@@ -4443,6 +4443,9 @@ int wh_Client_Sha256UpdateResponse(whClientContext* ctx, wc_Sha256* sha)
 
     ret = _getCryptoResponse(dataPtr, WC_HASH_TYPE_SHA256, (uint8_t**)&res);
     if (ret >= 0) {
+        if (res->hashType != WC_HASH_TYPE_SHA256) {
+            return WH_ERROR_ABORTED;
+        }
         memcpy(sha->digest, res->hash, WC_SHA256_DIGEST_SIZE);
         sha->hiLen = res->hiLen;
         sha->loLen = res->loLen;
@@ -4516,6 +4519,9 @@ int wh_Client_Sha256FinalResponse(whClientContext* ctx, wc_Sha256* sha,
 
     ret = _getCryptoResponse(dataPtr, WC_HASH_TYPE_SHA256, (uint8_t**)&res);
     if (ret >= 0) {
+        if (res->hashType != WC_HASH_TYPE_SHA256) {
+            return WH_ERROR_ABORTED;
+        }
         memcpy(out, res->hash, WC_SHA256_DIGEST_SIZE);
         /* Reset state without blowing away devId */
         (void)wc_InitSha256_ex(sha, NULL, sha->devId);
@@ -4699,6 +4705,7 @@ int wh_Client_Sha256DmaUpdateRequest(whClientContext* ctx, wc_Sha256* sha,
                 ctx, (uintptr_t)dmaBase, (void**)&inAddr, dmaSz,
                 WH_DMA_OPER_CLIENT_READ_POST, (whDmaFlags){0});
         }
+        memset(&ctx->dma.asyncCtx.sha, 0, sizeof(ctx->dma.asyncCtx.sha));
     }
     return ret;
 }
@@ -4728,9 +4735,14 @@ int wh_Client_Sha256DmaUpdateResponse(whClientContext* ctx, wc_Sha256* sha)
         ret =
             _getCryptoResponse(dataPtr, WC_HASH_TYPE_SHA256, (uint8_t**)&resp);
         if (ret >= 0) {
-            memcpy(sha->digest, resp->hash, WC_SHA256_DIGEST_SIZE);
-            sha->hiLen = resp->hiLen;
-            sha->loLen = resp->loLen;
+            if (resp->hashType != WC_HASH_TYPE_SHA256) {
+                ret = WH_ERROR_ABORTED;
+            }
+            else {
+                memcpy(sha->digest, resp->hash, WC_SHA256_DIGEST_SIZE);
+                sha->hiLen = resp->hiLen;
+                sha->loLen = resp->loLen;
+            }
         }
     }
 
@@ -4823,6 +4835,9 @@ int wh_Client_Sha256DmaFinalResponse(whClientContext* ctx, wc_Sha256* sha,
         ret =
             _getCryptoResponse(dataPtr, WC_HASH_TYPE_SHA256, (uint8_t**)&resp);
         if (ret >= 0) {
+            if (resp->hashType != WC_HASH_TYPE_SHA256) {
+                return WH_ERROR_ABORTED;
+            }
             memcpy(out, resp->hash, WC_SHA256_DIGEST_SIZE);
             /* Reset state without blowing away devId */
             (void)wc_InitSha256_ex(sha, NULL, sha->devId);
@@ -5009,6 +5024,9 @@ int wh_Client_Sha224UpdateResponse(whClientContext* ctx, wc_Sha224* sha)
 
     ret = _getCryptoResponse(dataPtr, WC_HASH_TYPE_SHA224, (uint8_t**)&res);
     if (ret >= 0) {
+        if (res->hashType != WC_HASH_TYPE_SHA224) {
+            return WH_ERROR_ABORTED;
+        }
         /* Intermediate hash state is stored at full SHA256 digest width */
         memcpy(sha->digest, res->hash, WC_SHA256_DIGEST_SIZE);
         sha->hiLen = res->hiLen;
@@ -5083,6 +5101,9 @@ int wh_Client_Sha224FinalResponse(whClientContext* ctx, wc_Sha224* sha,
 
     ret = _getCryptoResponse(dataPtr, WC_HASH_TYPE_SHA224, (uint8_t**)&res);
     if (ret >= 0) {
+        if (res->hashType != WC_HASH_TYPE_SHA224) {
+            return WH_ERROR_ABORTED;
+        }
         /* Final output is truncated to WC_SHA224_DIGEST_SIZE */
         memcpy(out, res->hash, WC_SHA224_DIGEST_SIZE);
         /* Reset state without blowing away devId */
@@ -5254,6 +5275,7 @@ int wh_Client_Sha224DmaUpdateRequest(whClientContext* ctx, wc_Sha224* sha,
                 ctx, (uintptr_t)dmaBase, (void**)&inAddr, dmaSz,
                 WH_DMA_OPER_CLIENT_READ_POST, (whDmaFlags){0});
         }
+        memset(&ctx->dma.asyncCtx.sha, 0, sizeof(ctx->dma.asyncCtx.sha));
     }
     return ret;
 }
@@ -5283,9 +5305,14 @@ int wh_Client_Sha224DmaUpdateResponse(whClientContext* ctx, wc_Sha224* sha)
         ret =
             _getCryptoResponse(dataPtr, WC_HASH_TYPE_SHA224, (uint8_t**)&resp);
         if (ret >= 0) {
-            memcpy(sha->digest, resp->hash, WC_SHA256_DIGEST_SIZE);
-            sha->hiLen = resp->hiLen;
-            sha->loLen = resp->loLen;
+            if (resp->hashType != WC_HASH_TYPE_SHA224) {
+                ret = WH_ERROR_ABORTED;
+            }
+            else {
+                memcpy(sha->digest, resp->hash, WC_SHA256_DIGEST_SIZE);
+                sha->hiLen = resp->hiLen;
+                sha->loLen = resp->loLen;
+            }
         }
     }
 
@@ -5374,6 +5401,9 @@ int wh_Client_Sha224DmaFinalResponse(whClientContext* ctx, wc_Sha224* sha,
         ret =
             _getCryptoResponse(dataPtr, WC_HASH_TYPE_SHA224, (uint8_t**)&resp);
         if (ret >= 0) {
+            if (resp->hashType != WC_HASH_TYPE_SHA224) {
+                return WH_ERROR_ABORTED;
+            }
             memcpy(out, resp->hash, WC_SHA224_DIGEST_SIZE);
             (void)wc_InitSha224_ex(sha, NULL, sha->devId);
         }
@@ -5560,6 +5590,9 @@ int wh_Client_Sha384UpdateResponse(whClientContext* ctx, wc_Sha384* sha)
 
     ret = _getCryptoResponse(dataPtr, WC_HASH_TYPE_SHA384, (uint8_t**)&res);
     if (ret >= 0) {
+        if (res->hashType != WC_HASH_TYPE_SHA384) {
+            return WH_ERROR_ABORTED;
+        }
         /* Intermediate hash state is stored at full SHA512 digest width */
         memcpy(sha->digest, res->hash, WC_SHA512_DIGEST_SIZE);
         sha->hiLen = res->hiLen;
@@ -5635,6 +5668,9 @@ int wh_Client_Sha384FinalResponse(whClientContext* ctx, wc_Sha384* sha,
 
     ret = _getCryptoResponse(dataPtr, WC_HASH_TYPE_SHA384, (uint8_t**)&res);
     if (ret >= 0) {
+        if (res->hashType != WC_HASH_TYPE_SHA384) {
+            return WH_ERROR_ABORTED;
+        }
         /* Final output is truncated to WC_SHA384_DIGEST_SIZE */
         memcpy(out, res->hash, WC_SHA384_DIGEST_SIZE);
         /* Reset state without blowing away devId */
@@ -5807,6 +5843,7 @@ int wh_Client_Sha384DmaUpdateRequest(whClientContext* ctx, wc_Sha384* sha,
                 ctx, (uintptr_t)dmaBase, (void**)&inAddr, dmaSz,
                 WH_DMA_OPER_CLIENT_READ_POST, (whDmaFlags){0});
         }
+        memset(&ctx->dma.asyncCtx.sha, 0, sizeof(ctx->dma.asyncCtx.sha));
     }
     return ret;
 }
@@ -5836,9 +5873,14 @@ int wh_Client_Sha384DmaUpdateResponse(whClientContext* ctx, wc_Sha384* sha)
         ret =
             _getCryptoResponse(dataPtr, WC_HASH_TYPE_SHA384, (uint8_t**)&resp);
         if (ret >= 0) {
-            memcpy(sha->digest, resp->hash, WC_SHA512_DIGEST_SIZE);
-            sha->hiLen = resp->hiLen;
-            sha->loLen = resp->loLen;
+            if (resp->hashType != WC_HASH_TYPE_SHA384) {
+                ret = WH_ERROR_ABORTED;
+            }
+            else {
+                memcpy(sha->digest, resp->hash, WC_SHA512_DIGEST_SIZE);
+                sha->hiLen = resp->hiLen;
+                sha->loLen = resp->loLen;
+            }
         }
     }
 
@@ -5928,6 +5970,9 @@ int wh_Client_Sha384DmaFinalResponse(whClientContext* ctx, wc_Sha384* sha,
         ret =
             _getCryptoResponse(dataPtr, WC_HASH_TYPE_SHA384, (uint8_t**)&resp);
         if (ret >= 0) {
+            if (resp->hashType != WC_HASH_TYPE_SHA384) {
+                return WH_ERROR_ABORTED;
+            }
             memcpy(out, resp->hash, WC_SHA384_DIGEST_SIZE);
             (void)wc_InitSha384_ex(sha, NULL, sha->devId);
         }
@@ -6113,6 +6158,9 @@ int wh_Client_Sha512UpdateResponse(whClientContext* ctx, wc_Sha512* sha)
 
     ret = _getCryptoResponse(dataPtr, WC_HASH_TYPE_SHA512, (uint8_t**)&res);
     if (ret >= 0) {
+        if (res->hashType != (uint32_t)sha->hashType) {
+            return WH_ERROR_ABORTED;
+        }
         memcpy(sha->digest, res->hash, WC_SHA512_DIGEST_SIZE);
         sha->hiLen = res->hiLen;
         sha->loLen = res->loLen;
@@ -6190,6 +6238,13 @@ int wh_Client_Sha512FinalResponse(whClientContext* ctx, wc_Sha512* sha,
     if (ret >= 0) {
         /* keep hashtype before initialization */
         hashType = sha->hashType;
+        /* Detect server/client mismatch (e.g. client built with SHA512_256
+         * support but server not — server would fall back to plain SHA512 and
+         * return a digest that does not correspond to the requested variant).
+         */
+        if (res->hashType != (uint32_t)hashType) {
+            return WH_ERROR_ABORTED;
+        }
         /* reset the state of the sha context (without blowing away devId and
          *  hashType), and copy only the digest bytes for the active variant */
         switch (hashType) {
@@ -6377,6 +6432,7 @@ int wh_Client_Sha512DmaUpdateRequest(whClientContext* ctx, wc_Sha512* sha,
                 ctx, (uintptr_t)dmaBase, (void**)&inAddr, dmaSz,
                 WH_DMA_OPER_CLIENT_READ_POST, (whDmaFlags){0});
         }
+        memset(&ctx->dma.asyncCtx.sha, 0, sizeof(ctx->dma.asyncCtx.sha));
     }
     return ret;
 }
@@ -6406,9 +6462,14 @@ int wh_Client_Sha512DmaUpdateResponse(whClientContext* ctx, wc_Sha512* sha)
         ret =
             _getCryptoResponse(dataPtr, WC_HASH_TYPE_SHA512, (uint8_t**)&resp);
         if (ret >= 0) {
-            memcpy(sha->digest, resp->hash, WC_SHA512_DIGEST_SIZE);
-            sha->hiLen = resp->hiLen;
-            sha->loLen = resp->loLen;
+            if (resp->hashType != (uint32_t)sha->hashType) {
+                ret = WH_ERROR_ABORTED;
+            }
+            else {
+                memcpy(sha->digest, resp->hash, WC_SHA512_DIGEST_SIZE);
+                sha->hiLen = resp->hiLen;
+                sha->loLen = resp->loLen;
+            }
         }
     }
 
@@ -6500,6 +6561,13 @@ int wh_Client_Sha512DmaFinalResponse(whClientContext* ctx, wc_Sha512* sha,
         if (ret >= 0) {
             /* keep hashtype before initialization */
             hashType = sha->hashType;
+            /* Detect server/client mismatch (e.g. client built with SHA512_256
+             * support but server not — server would fall back to plain SHA512
+             * and return a digest that does not correspond to the requested
+             * variant). */
+            if (resp->hashType != (uint32_t)hashType) {
+                return WH_ERROR_ABORTED;
+            }
             /* reset the state of the sha context (without blowing away devId
              *  and hashType), and copy only the digest bytes for the active
              *  variant */
