@@ -198,6 +198,21 @@ int wh_Client_SendRequest(whClientContext* c, uint16_t group, uint16_t action,
 int wh_Client_RecvResponse(whClientContext* c, uint16_t* out_group,
                            uint16_t* out_action, uint16_t* out_size,
                            void* data);
+
+/**
+ * @brief Reports whether a request has been sent whose matching response has
+ * not yet been consumed.
+ *
+ * Does not mutate any context state. Intended to be polled from within client
+ * API *Request functions so they can fail fast before doing any payload
+ * construction or pre-send side effects (e.g. DMA address translation).
+ *
+ * @param c The client context.
+ * @return 1 if a request is outstanding, 0 if idle, WH_ERROR_BADARGS on NULL
+ *         or uninitialized context.
+ */
+int wh_Client_IsRequestPending(const whClientContext* c);
+
 /** Comm component functions */
 
 /**

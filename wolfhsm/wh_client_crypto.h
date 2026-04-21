@@ -920,7 +920,7 @@ int wh_Client_Sha256(whClientContext* ctx, wc_Sha256* sha, const uint8_t* in,
  * next call. Does NOT wait for a reply.
  *
  * Contract: at most one outstanding async request may be in flight per
- * whClientContext (response matching uses ctx->last_req_kind/last_req_id).
+ * whClientContext (enforced by the comm layer's pending-request tracking).
  * If *requestSent is true, the caller MUST call wh_Client_Sha256UpdateResponse
  * before issuing any other async Request on the same ctx, including a Request
  * using a different wc_Sha256 instance or a different algorithm.
@@ -1050,7 +1050,7 @@ int wh_Client_Sha224(whClientContext* ctx, wc_Sha224* sha, const uint8_t* in,
  * next call. Does NOT wait for a reply.
  *
  * Contract: at most one outstanding async request may be in flight per
- * whClientContext (response matching uses ctx->last_req_kind/last_req_id).
+ * whClientContext (enforced by the comm layer's pending-request tracking).
  * If *requestSent is true, the caller MUST call wh_Client_Sha224UpdateResponse
  * before issuing any other async Request on the same ctx, including a Request
  * using a different wc_Sha224 instance or a different algorithm.
@@ -1152,7 +1152,7 @@ int wh_Client_Sha384(whClientContext* ctx, wc_Sha384* sha, const uint8_t* in,
  * the next call. Does NOT wait for a reply.
  *
  * Contract: at most one outstanding async request may be in flight per
- * whClientContext (response matching uses ctx->last_req_kind/last_req_id).
+ * whClientContext (enforced by the comm layer's pending-request tracking).
  * If *requestSent is true, the caller MUST call wh_Client_Sha384UpdateResponse
  * before issuing any other async Request on the same ctx, including a Request
  * using a different wc_Sha384 instance or a different algorithm.
@@ -1254,7 +1254,7 @@ int wh_Client_Sha512(whClientContext* ctx, wc_Sha512* sha, const uint8_t* in,
  * the next call. Does NOT wait for a reply.
  *
  * Contract: at most one outstanding async request may be in flight per
- * whClientContext (response matching uses ctx->last_req_kind/last_req_id).
+ * whClientContext (enforced by the comm layer's pending-request tracking).
  * If *requestSent is true, the caller MUST call wh_Client_Sha512UpdateResponse
  * before issuing any other async Request on the same ctx, including a Request
  * using a different wc_Sha512 instance or a different algorithm.

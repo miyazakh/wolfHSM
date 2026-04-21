@@ -46,6 +46,11 @@ enum WH_ERROR_ENUM {
     WH_ERROR_USAGE =
         -2009, /* Operation not permitted based on object/key usage flags */
     WH_ERROR_TIMEOUT = -2010, /* Timeout occurred. */
+    WH_ERROR_REQUEST_PENDING =
+        -2011, /* Caller-state violation: a request is already outstanding on
+                  the comm layer. Unlike NOTREADY, retrying the same call will
+                  not clear this -- drain the pending response or call
+                  wh_CommClient_AbortPending before issuing a new request. */
 
     /* NVM and keystore specific status returns */
     WH_ERROR_LOCKED      = -2100, /* Unlock and retry if necessary */

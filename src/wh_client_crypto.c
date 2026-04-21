@@ -4593,6 +4593,10 @@ int wh_Client_Sha256DmaUpdateRequest(whClientContext* ctx, wc_Sha256* sha,
         (in == NULL && inLen != 0)) {
         return WH_ERROR_BADARGS;
     }
+    /* Fail-fast on occupied transport to prevent modification to local state */
+    if (wh_CommClient_IsRequestPending(ctx->comm) == 1) {
+        return WH_ERROR_REQUEST_PENDING;
+    }
     *requestSent = false;
 
     if (sha->buffLen >= WC_SHA256_BLOCK_SIZE) {
@@ -4751,6 +4755,10 @@ int wh_Client_Sha256DmaFinalRequest(whClientContext* ctx, wc_Sha256* sha)
 
     if (ctx == NULL || sha == NULL) {
         return WH_ERROR_BADARGS;
+    }
+    /* Fail-fast on occupied transport to prevent modification to local state */
+    if (wh_CommClient_IsRequestPending(ctx->comm) == 1) {
+        return WH_ERROR_REQUEST_PENDING;
     }
     if (sha->buffLen >= WC_SHA256_BLOCK_SIZE) {
         return WH_ERROR_BADARGS;
@@ -5152,6 +5160,10 @@ int wh_Client_Sha224DmaUpdateRequest(whClientContext* ctx, wc_Sha224* sha,
         (in == NULL && inLen != 0)) {
         return WH_ERROR_BADARGS;
     }
+    /* Fail-fast on occupied transport to prevent modification to local state */
+    if (wh_CommClient_IsRequestPending(ctx->comm) == 1) {
+        return WH_ERROR_REQUEST_PENDING;
+    }
     *requestSent = false;
 
     if (sha->buffLen >= WC_SHA224_BLOCK_SIZE) {
@@ -5297,6 +5309,10 @@ int wh_Client_Sha224DmaFinalRequest(whClientContext* ctx, wc_Sha224* sha)
 
     if (ctx == NULL || sha == NULL) {
         return WH_ERROR_BADARGS;
+    }
+    /* Fail-fast on occupied transport to prevent modification to local state */
+    if (wh_CommClient_IsRequestPending(ctx->comm) == 1) {
+        return WH_ERROR_REQUEST_PENDING;
     }
     if (sha->buffLen >= WC_SHA224_BLOCK_SIZE) {
         return WH_ERROR_BADARGS;
@@ -5696,6 +5712,10 @@ int wh_Client_Sha384DmaUpdateRequest(whClientContext* ctx, wc_Sha384* sha,
         (in == NULL && inLen != 0)) {
         return WH_ERROR_BADARGS;
     }
+    /* Fail-fast on occupied transport to prevent modification to local state */
+    if (wh_CommClient_IsRequestPending(ctx->comm) == 1) {
+        return WH_ERROR_REQUEST_PENDING;
+    }
     *requestSent = false;
 
     if (sha->buffLen >= WC_SHA384_BLOCK_SIZE) {
@@ -5842,6 +5862,10 @@ int wh_Client_Sha384DmaFinalRequest(whClientContext* ctx, wc_Sha384* sha)
 
     if (ctx == NULL || sha == NULL) {
         return WH_ERROR_BADARGS;
+    }
+    /* Fail-fast on occupied transport to prevent modification to local state */
+    if (wh_CommClient_IsRequestPending(ctx->comm) == 1) {
+        return WH_ERROR_REQUEST_PENDING;
     }
     if (sha->buffLen >= WC_SHA384_BLOCK_SIZE) {
         return WH_ERROR_BADARGS;
@@ -6259,6 +6283,10 @@ int wh_Client_Sha512DmaUpdateRequest(whClientContext* ctx, wc_Sha512* sha,
         (in == NULL && inLen != 0)) {
         return WH_ERROR_BADARGS;
     }
+    /* Fail-fast on occupied transport to prevent modification to local state */
+    if (wh_CommClient_IsRequestPending(ctx->comm) == 1) {
+        return WH_ERROR_REQUEST_PENDING;
+    }
     *requestSent = false;
 
     if (sha->buffLen >= WC_SHA512_BLOCK_SIZE) {
@@ -6404,6 +6432,10 @@ int wh_Client_Sha512DmaFinalRequest(whClientContext* ctx, wc_Sha512* sha)
 
     if (ctx == NULL || sha == NULL) {
         return WH_ERROR_BADARGS;
+    }
+    /* Fail-fast on occupied transport to prevent modification to local state */
+    if (wh_CommClient_IsRequestPending(ctx->comm) == 1) {
+        return WH_ERROR_REQUEST_PENDING;
     }
     if (sha->buffLen >= WC_SHA512_BLOCK_SIZE) {
         return WH_ERROR_BADARGS;
