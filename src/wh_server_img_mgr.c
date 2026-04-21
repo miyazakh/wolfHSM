@@ -127,7 +127,6 @@ int wh_Server_ImgMgrVerifyImg(whServerImgMgrContext*      context,
             break;
 
         case WH_IMG_MGR_IMG_TYPE_RAW:
-        default:
             /* Existing behavior: load key from keystore + sig from NVM */
             ret = wh_Server_KeystoreFreshenKey(server, img->keyId, &keyBuf,
                                                &keyMeta);
@@ -155,6 +154,9 @@ int wh_Server_ImgMgrVerifyImg(whServerImgMgrContext*      context,
             actualSigSize = sigMeta.len;
             sigPtr        = sigBuf;
             break;
+
+        default:
+            return WH_ERROR_BADARGS;
     }
 
     /* Invoke verify method callback */
@@ -463,7 +465,8 @@ int wh_Server_ImgMgrVerifyMethodRsaSslWithSha256(
 /**
  * Find a TLV field in a wolfBoot image header.
  * Scans from hdr + WH_IMG_MGR_WOLFBOOT_HDR_OFFSET, reads type (uint16 LE)
- * + len (uint16 LE), skips padding (0xFF), returns pointer to value and length.
+ * + len (uint16 LE), skips padding (0xFF), and returns the length field of the
+ * TLV, or 0 if not found or invalid input.
  *
  * NOTE: Code lifted directly from wolfBoot. Should remain as unmodified as
  * possible for easy diffs
