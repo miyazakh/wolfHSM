@@ -270,7 +270,7 @@ if (ret != 0) {
 
 The Final request sends whatever partial data remains in the client's buffer
 (0 to `BLOCK_SIZE - 1` bytes) with `isLastBlock = 1`.  The server handles
-MD5-style padding and produces the final digest.  The Final response copies the
+the padding and produces the final digest.  The Final response copies the
 digest to the caller's output buffer and resets the `wc_Sha*` context (via
 `wc_InitSha*_ex`, preserving `devId`).
 
@@ -344,7 +344,7 @@ reaches the server:
   block (from the partial buffer) or the final tail travels inline.
 
 The hash state (`resumeState`) always travels **inline**, not via DMA, for
-cross-architecture concerns (endian translation, address space isolation).
+cross-architecture concerns (endian translation, etc.)
 
 DMA async functions require the client to stash the translated DMA address
 across the Request/Response boundary for POST cleanup.  This context is stored
