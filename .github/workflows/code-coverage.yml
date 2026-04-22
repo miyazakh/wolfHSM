@@ -45,7 +45,7 @@ jobs:
       run: |
         echo "=== Coverage Summary ==="
         cd test
-        gcovr --gcov-ignore-parse-errors="negative_hits.warn" Build --root .. --filter '\.\./src/.*' --filter '\.\./wolfhsm/.*' --print-summary
+        gcovr Build --root .. --gcov-ignore-parse-errors=negative_hits.warn_once_per_file --filter '\.\./src/.*' --filter '\.\./wolfhsm/.*' --print-summary
 
     # Upload coverage report as artifact
     - name: Upload coverage report

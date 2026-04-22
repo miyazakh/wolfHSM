@@ -98,10 +98,30 @@ typedef struct {
     const whDmaAddrAllowList* dmaAddrAllowList; /* allowed addresses */
 } whClientDmaConfig;
 
+/* Per-operation async DMA context: stores translated input DMA address
+ * that must survive across the Request/Response boundary for POST cleanup.
+ * State is now passed inline (not via DMA), so only input tracking is needed.
+ * ioAddr:      translated DMA address for input POST
+ * clientAddr:  original client address for POST
+ * ioSz:        DMA'd size for POST */
+typedef struct {
+    uintptr_t ioAddr;
+    uintptr_t clientAddr;
+    uint64_t  ioSz;
+} whClientDmaAsyncSha;
+
+/* Async DMA context union. Only one DMA request can be in flight at a time
+ * per client context, so a single union suffices. Each Response function
+ * knows which member to access based on its own operation type. */
+typedef union {
+    whClientDmaAsyncSha sha;
+} whClientDmaAsyncCtx;
+
 typedef struct {
     whClientDmaClientMemCb    cb;
     const whDmaAddrAllowList* dmaAddrAllowList; /* allowed addresses */
     void* heap; /* heap hint for using static memory (or other allocator) */
+    whClientDmaAsyncCtx asyncCtx;
 } whClientDmaContext;
 #endif /* WOLFHSM_CFG_DMA */
 
@@ -179,6 +199,21 @@ int wh_Client_SendRequest(whClientContext* c, uint16_t group, uint16_t action,
 int wh_Client_RecvResponse(whClientContext* c, uint16_t* out_group,
                            uint16_t* out_action, uint16_t* out_size,
                            void* data);
+
+/**
+ * @brief Reports whether a request has been sent whose matching response has
+ * not yet been consumed.
+ *
+ * Does not mutate any context state. Intended to be polled from within client
+ * API *Request functions so they can fail fast before doing any payload
+ * construction or pre-send side effects (e.g. DMA address translation).
+ *
+ * @param c The client context.
+ * @return 1 if a request is outstanding, 0 if idle, WH_ERROR_BADARGS on NULL
+ *         or uninitialized context.
+ */
+int wh_Client_IsRequestPending(const whClientContext* c);
+
 /** Comm component functions */
 
 /**

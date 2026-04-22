@@ -139,18 +139,18 @@ int wh_Client_SendRequest(whClientContext* c,
         uint16_t group, uint16_t action,
         uint16_t data_size, const void* data)
 {
-    int rc = 0;
+    int      rc     = 0;
     uint16_t req_id = 0;
-    uint16_t kind = WH_MESSAGE_KIND(group, action);
+    uint16_t kind   = WH_MESSAGE_KIND(group, action);
 
     if (c == NULL) {
         return WH_ERROR_BADARGS;
     }
     rc = wh_CommClient_SendRequest(c->comm, WH_COMM_MAGIC_NATIVE, kind, &req_id,
-        data_size, data);
+                                   data_size, data);
     if (rc == 0) {
         c->last_req_kind = kind;
-        c->last_req_id = req_id;
+        c->last_req_id   = req_id;
     }
     return rc;
 }
@@ -159,28 +159,24 @@ int wh_Client_RecvResponse(whClientContext *c,
         uint16_t *out_group, uint16_t *out_action,
         uint16_t *out_size, void* data)
 {
-    int rc = 0;
-    uint16_t resp_magic = 0;
+    int      rc        = 0;
     uint16_t resp_kind = 0;
-    uint16_t resp_id = 0;
+    uint16_t resp_id   = 0;
     uint16_t resp_size = 0;
 
     if (c == NULL) {
         return WH_ERROR_BADARGS;
     }
 
-    rc = wh_CommClient_RecvResponse(c->comm,
-                &resp_magic, &resp_kind, &resp_id,
-                &resp_size, data);
+    /* Comm layer performs magic and sequence validation */
+    rc = wh_CommClient_RecvResponse(c->comm, NULL, &resp_kind, &resp_id,
+                                    &resp_size, data);
     if (rc == 0) {
-        /* Validate response */
-        if (    (resp_magic != WH_COMM_MAGIC_NATIVE) ||
-                (resp_kind != c->last_req_kind) ||
-                (resp_id != c->last_req_id) ){
-            /* Invalid or unexpected message */
+        if ((resp_kind != c->last_req_kind) || (resp_id != c->last_req_id)) {
+            /* Response kind/id doesn't match outstanding request. */
             rc = WH_ERROR_ABORTED;
-        } else {
-            /* Valid and expected message. Set outputs */
+        }
+        else {
             if (out_group != NULL) {
                 *out_group = WH_MESSAGE_GROUP(resp_kind);
             }
@@ -193,6 +189,14 @@ int wh_Client_RecvResponse(whClientContext *c,
         }
     }
     return rc;
+}
+
+int wh_Client_IsRequestPending(const whClientContext* c)
+{
+    if (c == NULL) {
+        return WH_ERROR_BADARGS;
+    }
+    return wh_CommClient_IsRequestPending(c->comm);
 }
 
 int wh_Client_CommInitRequest(whClientContext* c)
