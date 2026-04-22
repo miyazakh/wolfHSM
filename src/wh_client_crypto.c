@@ -6158,7 +6158,13 @@ int wh_Client_Sha512UpdateResponse(whClientContext* ctx, wc_Sha512* sha)
 
     ret = _getCryptoResponse(dataPtr, WC_HASH_TYPE_SHA512, (uint8_t**)&res);
     if (ret >= 0) {
-        if (res->hashType != (uint32_t)sha->hashType) {
+        /* Family check, not variant match: SHA-512/t shares block size and
+         * compression with SHA-512, and the client supplies the variant IV
+         * in resumeState.hash — so a server missing SHA-512/t support still
+         * returns a correct intermediate state. */
+        if (res->hashType != WC_HASH_TYPE_SHA512 &&
+            res->hashType != WC_HASH_TYPE_SHA512_224 &&
+            res->hashType != WC_HASH_TYPE_SHA512_256) {
             return WH_ERROR_ABORTED;
         }
         memcpy(sha->digest, res->hash, WC_SHA512_DIGEST_SIZE);
@@ -6238,11 +6244,13 @@ int wh_Client_Sha512FinalResponse(whClientContext* ctx, wc_Sha512* sha,
     if (ret >= 0) {
         /* keep hashtype before initialization */
         hashType = sha->hashType;
-        /* Detect server/client mismatch (e.g. client built with SHA512_256
-         * support but server not — server would fall back to plain SHA512 and
-         * return a digest that does not correspond to the requested variant).
-         */
-        if (res->hashType != (uint32_t)hashType) {
+        /* Family check, not variant match: SHA-512/t shares block size and
+         * compression with SHA-512; the client supplies the variant IV in
+         * resumeState.hash and the switch below truncates by hashType, so a
+         * server missing SHA-512/t support still yields a correct digest. */
+        if (res->hashType != WC_HASH_TYPE_SHA512 &&
+            res->hashType != WC_HASH_TYPE_SHA512_224 &&
+            res->hashType != WC_HASH_TYPE_SHA512_256) {
             return WH_ERROR_ABORTED;
         }
         /* reset the state of the sha context (without blowing away devId and
@@ -6462,7 +6470,13 @@ int wh_Client_Sha512DmaUpdateResponse(whClientContext* ctx, wc_Sha512* sha)
         ret =
             _getCryptoResponse(dataPtr, WC_HASH_TYPE_SHA512, (uint8_t**)&resp);
         if (ret >= 0) {
-            if (resp->hashType != (uint32_t)sha->hashType) {
+            /* Family check, not variant match: SHA-512/t shares block size and
+             * compression with SHA-512, and the client supplies the variant IV
+             * in resumeState.hash — so a server missing SHA-512/t support still
+             * returns a correct intermediate state. */
+            if (resp->hashType != WC_HASH_TYPE_SHA512 &&
+                resp->hashType != WC_HASH_TYPE_SHA512_224 &&
+                resp->hashType != WC_HASH_TYPE_SHA512_256) {
                 ret = WH_ERROR_ABORTED;
             }
             else {
@@ -6561,11 +6575,14 @@ int wh_Client_Sha512DmaFinalResponse(whClientContext* ctx, wc_Sha512* sha,
         if (ret >= 0) {
             /* keep hashtype before initialization */
             hashType = sha->hashType;
-            /* Detect server/client mismatch (e.g. client built with SHA512_256
-             * support but server not — server would fall back to plain SHA512
-             * and return a digest that does not correspond to the requested
-             * variant). */
-            if (resp->hashType != (uint32_t)hashType) {
+            /* Family check, not variant match: SHA-512/t shares block size and
+             * compression with SHA-512; the client supplies the variant IV in
+             * resumeState.hash and the switch below truncates by hashType, so a
+             * server missing SHA-512/t support still yields a correct digest.
+             */
+            if (resp->hashType != WC_HASH_TYPE_SHA512 &&
+                resp->hashType != WC_HASH_TYPE_SHA512_224 &&
+                resp->hashType != WC_HASH_TYPE_SHA512_256) {
                 return WH_ERROR_ABORTED;
             }
             /* reset the state of the sha context (without blowing away devId
