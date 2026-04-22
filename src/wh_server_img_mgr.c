@@ -269,6 +269,17 @@ int wh_Server_ImgMgrVerifyMethodEccWithSha256(whServerImgMgrContext*   context,
     /* Hash the image data from server pointer using one-shot API */
     ret = wc_Sha256Hash_ex((const uint8_t*)serverPtr, (word32)img->size, hash,
                            NULL, server->devId);
+
+    /* Always release the DMA mapping to avoid leaking READ_PRE-allocated
+     * resources, even when the hash failed. Preserve the original error. */
+    {
+        int dmaRet = wh_Server_DmaProcessClientAddress(
+            server, img->addr, &serverPtr, img->size,
+            WH_DMA_OPER_CLIENT_READ_POST, (whServerDmaFlags){0});
+        if (ret == 0) {
+            ret = dmaRet;
+        }
+    }
 #else
     /* Hash the image data using one-shot API */
     ret = wc_Sha256Hash_ex((const uint8_t*)img->addr, (word32)img->size, hash,
@@ -278,16 +289,6 @@ int wh_Server_ImgMgrVerifyMethodEccWithSha256(whServerImgMgrContext*   context,
         wc_ecc_free(&eccKey);
         return ret;
     }
-
-#ifdef WOLFHSM_CFG_DMA
-    ret = wh_Server_DmaProcessClientAddress(
-        server, img->addr, &serverPtr, img->size, WH_DMA_OPER_CLIENT_READ_POST,
-        (whServerDmaFlags){0});
-    if (ret != WH_ERROR_OK) {
-        wc_ecc_free(&eccKey);
-        return ret;
-    }
-#endif
 
     /* Verify the signature */
     ret = wc_ecc_verify_hash(sig, (word32)sigSz, hash, sizeof(hash),
@@ -348,6 +349,17 @@ int wh_Server_ImgMgrVerifyMethodAesCmac(whServerImgMgrContext*   context,
     ret = wc_AesCmacVerify_ex(&cmac, sig, (word32)sigSz, (const byte*)serverPtr,
                               (word32)img->size, key, (word32)keySz, NULL,
                               server->devId);
+
+    /* Always release the DMA mapping to avoid leaking READ_PRE-allocated
+     * resources, even when the verify failed. Preserve the original error. */
+    {
+        int dmaRet = wh_Server_DmaProcessClientAddress(
+            server, img->addr, &serverPtr, img->size,
+            WH_DMA_OPER_CLIENT_READ_POST, (whServerDmaFlags){0});
+        if (ret == 0) {
+            ret = dmaRet;
+        }
+    }
 #else
     ret = wc_AesCmacVerify_ex(&cmac, sig, (word32)sigSz, (const byte*)img->addr,
                               (word32)img->size, key, (word32)keySz, NULL,
@@ -356,15 +368,6 @@ int wh_Server_ImgMgrVerifyMethodAesCmac(whServerImgMgrContext*   context,
     if (ret != 0) {
         return ret;
     }
-
-#ifdef WOLFHSM_CFG_DMA
-    ret = wh_Server_DmaProcessClientAddress(
-        server, img->addr, &serverPtr, img->size, WH_DMA_OPER_CLIENT_READ_POST,
-        (whServerDmaFlags){0});
-    if (ret != WH_ERROR_OK) {
-        return ret;
-    }
-#endif
 
     return WH_ERROR_OK; /* CMAC verification succeeded */
 }
@@ -417,6 +420,17 @@ int wh_Server_ImgMgrVerifyMethodRsaSslWithSha256(
     /* Hash the image data from server pointer using one-shot API */
     ret = wc_Sha256Hash_ex((const uint8_t*)serverPtr, (word32)img->size, hash,
                            NULL, server->devId);
+
+    /* Always release the DMA mapping to avoid leaking READ_PRE-allocated
+     * resources, even when the hash failed. Preserve the original error. */
+    {
+        int dmaRet = wh_Server_DmaProcessClientAddress(
+            server, img->addr, &serverPtr, img->size,
+            WH_DMA_OPER_CLIENT_READ_POST, (whServerDmaFlags){0});
+        if (ret == 0) {
+            ret = dmaRet;
+        }
+    }
 #else
     /* Hash the image data using one-shot API */
     ret = wc_Sha256Hash_ex((const uint8_t*)img->addr, (word32)img->size, hash,
@@ -426,16 +440,6 @@ int wh_Server_ImgMgrVerifyMethodRsaSslWithSha256(
         wc_FreeRsaKey(&rsaKey);
         return ret;
     }
-
-#ifdef WOLFHSM_CFG_DMA
-    ret = wh_Server_DmaProcessClientAddress(
-        server, img->addr, &serverPtr, img->size, WH_DMA_OPER_CLIENT_READ_POST,
-        (whServerDmaFlags){0});
-    if (ret != WH_ERROR_OK) {
-        wc_FreeRsaKey(&rsaKey);
-        return ret;
-    }
-#endif
 
     /* Verify the signature using RSA SSL verify */
     ret =
