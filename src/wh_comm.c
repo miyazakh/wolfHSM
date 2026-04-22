@@ -212,7 +212,7 @@ int wh_CommClient_RecvResponse(whCommClient* context,
 
             /* Validate sequence number. A sequence mismatch indicates a
              * well-formatted but stale or unsolicited message (e.g. a request
-             * the caller abandoned). Since nly one pending request is allowed
+             * the caller abandoned). Since only one pending request is allowed
              * at a time, and there is no way to reassociate a straggling
              * response with an old request, we choose to simply drop the
              * message silently so caller can keep polling for new messages in
